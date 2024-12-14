@@ -48,10 +48,15 @@ $PAGE->set_heading(format_string($course->fullname));
 
 echo $OUTPUT->header();
 
+// Print tertiary navigation.
+$renderer = $PAGE->get_renderer('core_question', 'bank');
+$qbankaction = new \core_question\output\qbank_action_menu($url);
+echo $renderer->render($qbankaction);
+
 echo $OUTPUT->heading(get_string('title', 'qbank_genai'));
 
 // Check for OpenAI API key.
-$openaiapikey = get_config('qbank_genai', 'openaiapikey');
+$openaiapikey = qbank_genai_get_openai_apikey($course->id);
 if (empty($openaiapikey)) {
     echo html_writer::tag('div', get_string('noopenaiapikey', 'qbank_genai'), ['class' => 'alert alert-warning']);
 }
@@ -110,7 +115,7 @@ if (count($resources) == 0) {
         }
 
         // Launch generation task.
-        $task = \qbank_genai\task\generation_task::instance($selectedresources, $USER->id, $context->id);
+        $task = \qbank_genai\task\generation_task::instance($selectedresources, $USER->id, $context->id, $course->id);
         \core\task\manager::queue_adhoc_task($task); // Add true to avoid duplicates.
 
         // Log generation task launched.

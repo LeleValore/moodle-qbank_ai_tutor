@@ -36,14 +36,16 @@ class generation_task extends \core\task\adhoc_task {
      * @param array $resources The selected resources for which questions shall be generated
      * @param int $userid The user who started the task
      * @param int $contextid The context ID (needed for the question bank category)
+     * @param int $courseid The course ID (needed for retrieving any course-specific API key)
      *
      * @return static the singleton instance
      */
-    public static function instance(array $resources, int $userid, int $contextid) {
+    public static function instance(array $resources, int $userid, int $contextid, int $courseid) {
         $task = new self();
         $task->set_custom_data((object) [
             'resources' => $resources,
             'contextid' => $contextid,
+            'courseid' => $courseid,
         ]);
         $task->set_userid($userid);
 
@@ -55,20 +57,16 @@ class generation_task extends \core\task\adhoc_task {
      * questions via an LLM; and 3) programmatically add the questions in a newly created question bank category.
      */
     public function execute() {
-        $openaiapikey = get_config('qbank_genai', 'openaiapikey');
+        $data = $this->get_custom_data();
+
+        $openaiapikey = qbank_genai_get_openai_apikey($data->courseid);
         if (empty($openaiapikey)) {
             throw new \Exception('No OpenAI API key provided.');
         }
 
-        $assistantid = get_config('qbank_genai', 'assistantid');
-        if (empty($assistantid)) {
-            $assistantid = qbank_genai_create_openai_assistant($openaiapikey);
-            set_config("assistantid", $assistantid, "qbank_genai");
-        }
-
         $client = \OpenAI::client($openaiapikey);
 
-        $data = $this->get_custom_data();
+        $assistantid = qbank_genai_get_or_create_openai_assistant($data->courseid, $this->get_userid());
 
         $category = qbank_genai_create_question_category($data->contextid, qbank_genai_get_resource_names_string($data->resources));
         mtrace("Category created: ".$category->name);

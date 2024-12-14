@@ -26,20 +26,22 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['assistantid'] = 'Assistant ID';
-$string['assistantiddesc'] = 'ID concerning the <a href="https://platform.openai.com/docs/assistants/overview" target="_blank">Assistants API</a> of OpenAI. This will be set by the plugin.';
+$string['assistantid_help'] = 'ID concerning the <a href="https://platform.openai.com/docs/assistants/overview" target="_blank">Assistants API</a> of OpenAI. This will be set by the plugin.';
 
 $string['errormsg_noneselected'] = 'Please select at least one resource.';
 
-$string['noopenaiapikey'] = 'You have not set an OpenAI API key so far. Please refer to the plugin settings.';
+$string['noopenaiapikey'] = 'You need to set an OpenAI API key.';
 $string['noresources'] = 'There are no resources in your course.';
 
 $string['ongoingtasks'] = 'The following generation tasks are ongoing:';
 
 $string['openaiapikey'] = 'OpenAI API key';
-$string['openaiapikeydesc'] = 'To be created at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>.';
+$string['openaiapikey_help'] = 'To be created at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>.';
+$string['openaiapisettings'] = 'OpenAI API Settings';
 
 $string['pluginname'] = 'Generative AI Question Bank';
 
 $string['privacy:metadata'] = 'The GenAI question bank plugin does not store any personal data.';
 
+$string['settings'] = 'Generative AI Question Bank Settings';
 $string['title'] = 'Generate questions';

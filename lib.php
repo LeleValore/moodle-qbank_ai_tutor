@@ -48,8 +48,8 @@ function qbank_genai_extend_navigation_course(navigation_node $navigation, stdCl
     }
 
     $navigation->add(
-        get_string('title', 'qbank_genai'),
-        new moodle_url('/question/bank/genai/index.php', ['courseid' => $course->id]),
+        get_string('settings', 'qbank_genai'),
+        new moodle_url('/question/bank/genai/genai_settings.php', ['courseid' => $course->id]),
         navigation_node::COURSE_INDEX_PAGE,
     );
 }
@@ -94,12 +94,72 @@ function qbank_genai_get_fileinfo_for_resource(int $resourceid) {
 }
 
 /**
+ * Retrieves the OpenAI API key, if any. It first checks the course-specific settings, then the site-wide settings.
+ *
+ * @param int $courseid ID of the course.
+ * @return string|null The API key or null.
+ */
+function qbank_genai_get_openai_apikey(int $courseid) {
+    global $DB, $USER;
+
+    $coursesettings = $DB->get_record('qbank_genai_openai_settings', ["courseid" => $courseid, "userid" => $USER->id]);
+
+    if ($coursesettings && !empty($coursesettings->openaiapikey)) {
+        return $coursesettings->openaiapikey;
+    }
+
+    $openaiapikey = get_config('qbank_genai', 'openaiapikey');
+
+    if (!empty($openaiapikey)) {
+        return $openaiapikey;
+    }
+
+    return null;
+}
+
+/**
+ * Retrieves and - if necessary - creates an OpenAI Assistant for the same level
+ * (course-specific/site-wide) as the OpenAI API key.
+ *
+ * @param int $courseid ID of the course in which questions will be created.
+ * @param int $userid ID of the user executing the task.
+ * @return string ID of the assistant.
+ */
+function qbank_genai_get_or_create_openai_assistant(int $courseid, int $userid) {
+    global $DB;
+
+    $assistantid = null;
+
+    $coursesettings = $DB->get_record('qbank_genai_openai_settings', ["courseid" => $courseid, "userid" => $userid]);
+
+    if ($coursesettings && !empty($coursesettings->openaiapikey)) {
+        // Course-specific.
+        $assistantid = $coursesettings->assistantid;
+
+        if (empty($assistantid)) {
+            $assistantid = _qbank_genai_create_openai_assistant($coursesettings->openaiapikey);
+            $DB->update_record('qbank_genai_openai_settings', ["id" => $coursesettings->id, "assistantid" => $assistantid]);
+        }
+    } else {
+        // Site-wide.
+        $assistantid = get_config('qbank_genai', 'assistantid');
+
+        if (empty($assistantid)) {
+            $assistantid = _qbank_genai_create_openai_assistant(get_config('qbank_genai', 'openaiapikey'));
+            set_config("assistantid", $assistantid, "qbank_genai");
+        }
+    }
+
+    return $assistantid;
+}
+
+/**
  * Creates an OpenAI Assistant.
  *
- * @param string $apikey OpenAI API key
- * @return int ID the created assistant
+ * @param string $apikey The OpenAI API key.
+ * @return string ID of the created assistant.
  */
-function qbank_genai_create_openai_assistant(string $apikey) {
+function _qbank_genai_create_openai_assistant(string $apikey) {
     $client = OpenAI::client($apikey);
 
     $response = $client->assistants()->create([
