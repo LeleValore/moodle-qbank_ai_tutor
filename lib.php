@@ -48,6 +48,12 @@ function qbank_genai_extend_navigation_course(navigation_node $navigation, stdCl
     }
 
     $navigation->add(
+        get_string('title', 'qbank_genai'),
+        new moodle_url('/question/bank/genai/index.php', ['courseid' => $course->id]),
+        navigation_node::COURSE_INDEX_PAGE,
+    );
+
+    $navigation->add(
         get_string('settings', 'qbank_genai'),
         new moodle_url('/question/bank/genai/genai_settings.php', ['courseid' => $course->id]),
         navigation_node::COURSE_INDEX_PAGE,
