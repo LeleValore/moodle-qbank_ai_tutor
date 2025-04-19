@@ -114,8 +114,17 @@ if (count($resources) == 0) {
             }
         }
 
+        // In Moodle 5.0, shared question banks were introduced. New courses do no longer contain a default question bank.
+        global $CFG;
+        if ($CFG->version > 2025041400) {
+            $qbank = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
+            $contextqbankid = context_module::instance($qbank->id)->id;
+        } else {
+            $contextqbankid = $context->id;
+        }
+
         // Launch generation task.
-        $task = \qbank_genai\task\generation_task::instance($selectedresources, $USER->id, $context->id, $course->id);
+        $task = \qbank_genai\task\generation_task::instance($selectedresources, $USER->id, $contextqbankid, $course->id);
         \core\task\manager::queue_adhoc_task($task); // Add true to avoid duplicates.
 
         // Log generation task launched.

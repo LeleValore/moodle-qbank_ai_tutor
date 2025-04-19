@@ -181,11 +181,11 @@ function _qbank_genai_create_openai_assistant(string $apikey) {
 /**
  * Creates a new question category in the question bank of the given course. Adapted from /question/tests/generator/lib.php.
  *
- * @param int $courseid The ID of the course
+ * @param int $contextid The ID of the context
  * @param string $resourcedescription The description about the resources for which questions are generated
  * @return stdClass Record of the new question category
  */
-function qbank_genai_create_question_category(int $courseid, string $resourcedescription) {
+function qbank_genai_create_question_category(int $contextid, string $resourcedescription) {
     global $DB;
 
     $record = [
@@ -195,8 +195,8 @@ function qbank_genai_create_question_category(int $courseid, string $resourcedes
         'stamp'      => make_unique_id_code(),
         'sortorder'  => 999,
         'idnumber'   => null,
-        'contextid'  => $courseid,
-        'parent'     => question_get_top_category($courseid, true)->id,
+        'contextid'  => $contextid,
+        'parent'     => question_get_top_category($contextid, true)->id,
     ];
 
     $record['id'] = $DB->insert_record('question_categories', $record);
