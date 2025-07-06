@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module autotag
+ * AMD module for the AutoTag feature.
  *
  * @module     qbank_genai/autotag
  * @copyright  2025 Christian Grévisse <christian.grevisse@uni.lu>

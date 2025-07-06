@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe file autotag
+ * AutoTag feature.
  *
  * @package    qbank_genai
  * @copyright  2025 Christian Grévisse <christian.grevisse@uni.lu>
