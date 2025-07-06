@@ -10,6 +10,7 @@ use OpenAI\Responses\Threads\Messages\ThreadMessageResponse;
 use OpenAI\Responses\Threads\Runs\Steps\Delta\ThreadRunStepDeltaResponse;
 use OpenAI\Responses\Threads\Runs\Steps\ThreadRunStepResponse;
 use OpenAI\Responses\Threads\ThreadResponse;
+use OpenAI\Testing\Responses\Concerns\FakeableForStreamedResponse;
 
 /**
  * @implements ResponseContract<array{event: string, data: array<string, mixed>}>
@@ -21,11 +22,12 @@ class ThreadRunStreamResponse implements ResponseContract
      */
     use ArrayAccessible;
 
+    use FakeableForStreamedResponse;
+
     private function __construct(
         public readonly string $event,
         public readonly ThreadResponse|ThreadRunResponse|ThreadRunStepResponse|ThreadRunStepDeltaResponse|ThreadMessageResponse|ThreadMessageDeltaResponse $response,
-    ) {
-    }
+    ) {}
 
     /**
      * Acts as static factory, and returns a new Response instance.
@@ -50,6 +52,7 @@ class ThreadRunStreamResponse implements ResponseContract
             'thread.run.in_progress',
             'thread.run.requires_action',
             'thread.run.completed',
+            'thread.run.incomplete',
             'thread.run.failed',
             'thread.run.cancelling',
             'thread.run.cancelled',

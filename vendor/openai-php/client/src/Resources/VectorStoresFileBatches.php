@@ -57,7 +57,7 @@ final class VectorStoresFileBatches implements VectorStoresFileBatchesContract
     {
         $payload = Payload::list("vector_stores/$vectorStoreId/file_batches/$fileBatchId/files", $parameters);
 
-        /** @var Response<array{object: string, data: array<int, array{id: string, object: string, usage_bytes: int, created_at: int, vector_store_id: string, status: string, last_error: ?array{code: string, message: string}, chunking_strategy: array{type: 'static', static: array{max_chunk_size_tokens: int, chunk_overlap_tokens: int}}|array{type: 'other'}}>, first_id: ?string, last_id: ?string, has_more: bool}> $response */
+        /** @var Response<array{object: string, data: array<int, array{id: string, object: string, usage_bytes: int, created_at: int, vector_store_id: string, status: string, attributes: array<string, string>, last_error: ?array{code: string, message: string}, chunking_strategy: array{type: 'static', static: array{max_chunk_size_tokens: int, chunk_overlap_tokens: int}}|array{type: 'other'}}>, first_id: ?string, last_id: ?string, has_more: bool}> $response */
         $response = $this->transporter->requestObject($payload);
 
         return VectorStoreFileListResponse::from($response->data(), $response->meta());
@@ -70,7 +70,7 @@ final class VectorStoresFileBatches implements VectorStoresFileBatchesContract
      */
     public function cancel(string $vectorStoreId, string $fileBatchId): VectorStoreFileBatchResponse
     {
-        $payload = Payload::delete("vector_stores/$vectorStoreId/file_batches", $fileBatchId);
+        $payload = Payload::cancel("vector_stores/$vectorStoreId/file_batches", $fileBatchId);
 
         /** @var Response<array{id: string, object: string, created_at: int, vector_store_id: string, status: string, file_counts: array{in_progress: int, completed: int, failed: int, cancelled: int, total: int}}> $response */
         $response = $this->transporter->requestObject($payload);

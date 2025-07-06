@@ -17,6 +17,7 @@
 namespace qbank_genai;
 
 use core_question\local\bank\navigation_node_base;
+use core_question\local\bank\view;
 
 /**
  * Plugin entrypoint.
@@ -34,6 +35,26 @@ class plugin_feature extends \core_question\local\bank\plugin_features_base {
      */
     public function get_navigation_node(): ?navigation_node_base {
         return new navigation();
+    }
+
+    /**
+     * Returns the question actions for the question bank.
+     *
+     * @param view $qbank The question bank view.
+     * @return array An array of question actions.
+     */
+    public function get_question_actions($qbank): array {
+        return [new autotag_action($qbank)];
+    }
+
+    /**
+     * Returns the bulk actions for the question bank.
+     *
+     * @param view|null $qbank The question bank view.
+     * @return array An array of bulk actions.
+     */
+    public function get_bulk_actions(?view $qbank = null): array {
+        return [new bulk_autotag_action($qbank)];
     }
 
 }

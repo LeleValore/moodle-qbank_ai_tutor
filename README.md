@@ -2,6 +2,8 @@
 
 This Moodle plugin allows to generate quiz questions based on the content of a course (e.g., *File* modules) through an underlying Large Language Model (LLM) such as GPT. The generated questions are added to the question bank of the course and can of course be edited by a human afterwards.
 
+Existing questions can also be auto-tagged, again through LLM support.
+
 An [OpenAI API key](https://platform.openai.com) is currently required to be able to use this plugin. The key can be set in the settings page of the plugin.
 
 ## Installing via uploaded ZIP file ##

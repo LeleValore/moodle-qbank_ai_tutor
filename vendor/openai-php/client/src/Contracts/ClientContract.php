@@ -15,6 +15,7 @@ use OpenAI\Contracts\Resources\FineTuningContract;
 use OpenAI\Contracts\Resources\ImagesContract;
 use OpenAI\Contracts\Resources\ModelsContract;
 use OpenAI\Contracts\Resources\ModerationsContract;
+use OpenAI\Contracts\Resources\ResponsesContract;
 use OpenAI\Contracts\Resources\ThreadsContract;
 use OpenAI\Contracts\Resources\VectorStoresContract;
 
@@ -27,6 +28,13 @@ interface ClientContract
      * @see https://platform.openai.com/docs/api-reference/completions
      */
     public function completions(): CompletionsContract;
+
+    /**
+     * Manage responses to assist models with tasks.
+     *
+     * @see https://platform.openai.com/docs/api-reference/responses
+     */
+    public function responses(): ResponsesContract;
 
     /**
      * Given a chat conversation, the model will return a chat completion response.
@@ -89,7 +97,7 @@ interface ClientContract
     public function fineTunes(): FineTunesContract;
 
     /**
-     * Given a input text, outputs if the model classifies it as violating OpenAI's content policy.
+     * Given an input text, outputs if the model classifies it as violating OpenAI's content policy.
      *
      * @see https://platform.openai.com/docs/api-reference/moderations
      */
