@@ -22,17 +22,17 @@ use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\userlist;
+use core_privacy\local\request\transform;
+use core_privacy\local\request\writer;
 
 /**
  * Privacy Subsystem for qbank_genai.
  *
- * @package    local_genai
- * @copyright  2025 Niko Hoogeveen <nikohoogeveen@catalyst-ca.net>
+ * @package    qbank_genai
+ * @copyright  2025 Niko Hoogeveen <nikohoogeveen@catalyst-ca.net>, Christian Grévisse <christian.grevisse@uni.lu>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
-        // This plugin does not store any data itself.
-        // It has no database tables, and it purely acts as a conduit, sending data externally.
         \core_privacy\local\metadata\provider,
         \core_privacy\local\request\core_userlist_provider,
         \core_privacy\local\request\plugin\provider {
@@ -54,11 +54,26 @@ class provider implements
     /**
      * Get the list of contexts that contain user information for the specified user.
      *
-     * @param int $userid the userid.
-     * @return contextlist the list of contexts containing user info for the user.
+     * @param   int           $userid       The user to search.
+     * @return  contextlist   $contextlist  The list of contexts used in this plugin.
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
-        return new contextlist();
+        $contextlist = new contextlist();
+
+        $sql = "SELECT c.id
+            FROM {context} c
+            INNER JOIN {qbank_genai_openai_settings} s ON c.instanceid = s.courseid AND c.contextlevel = :contextlevel
+            WHERE s.userid = :userid
+        ";
+
+        $params = [
+            'contextlevel' => CONTEXT_COURSE,
+            'userid'       => $userid,
+        ];
+
+        $contextlist->add_from_sql($sql, $params);
+
+        return $contextlist;
     }
 
     /**
@@ -67,6 +82,64 @@ class provider implements
      * @param   userlist    $userlist   The userlist containing the list of users who have data in this context/plugin combination.
      */
     public static function get_users_in_context(userlist $userlist) {
+        $context = $userlist->get_context();
+
+        if (!$context instanceof \context_course) {
+            return;
+        }
+
+        $sql = "SELECT s.userid
+            FROM {qbank_genai_openai_settings} s
+            WHERE s.courseid = :instanceid
+        ";
+
+        $params = [
+            'instanceid' => $context->instanceid,
+        ];
+
+        $userlist->add_from_sql('userid', $sql, $params);
+    }
+
+    /**
+     * Retrieves the records related to a given user and context.
+     *
+     * @param int $userid       The ID of the user.
+     * @param int $contextid    The ID of the context.
+     *
+     * @return stdClass[] The retrieved records.
+     */
+    private static function get_records(int $userid, int $contextid) {
+        global $DB;
+
+        $data = [];
+
+        $sql = "SELECT s.id, s.courseid, s.userid, s.openaiapikey, s.assistantid
+            FROM {qbank_genai_openai_settings} s
+            INNER JOIN {context} c ON c.instanceid = s.courseid AND c.contextlevel = :contextlevel
+            WHERE s.userid = :userid AND c.id = :contextid
+        ";
+
+        $params = [
+            'userid' => $userid,
+            'contextid' => $contextid,
+            'contextlevel' => CONTEXT_COURSE,
+        ];
+
+        $rs = $DB->get_recordset_sql($sql, $params);
+
+        foreach ($rs as $record) {
+            $data[] = (object) [
+                'id' => $record->id,
+                'courseid' => $record->courseid,
+                'userid' => transform::user($record->userid),
+                'openaiapikey' => $record->openaiapikey,
+                'assistantid' => $record->assistantid,
+            ];
+        }
+
+        $rs->close();
+
+        return $data;
     }
 
     /**
@@ -75,14 +148,58 @@ class provider implements
      * @param approved_contextlist $contextlist a list of contexts approved for export.
      */
     public static function export_user_data(approved_contextlist $contextlist) {
+        $user = $contextlist->get_user();
+        $contexts = $contextlist->get_contexts();
+
+        foreach ($contexts as $context) {
+            $data = self::get_records($user->id, $context->id);
+
+            if (!empty($data)) {
+                $subcontext = get_string('pluginname', 'qbank_genai');
+                writer::with_context($context)
+                    ->export_data([$subcontext], (object) [
+                        'settings' => $data,
+                    ]);
+            }
+        }
     }
 
     /**
      * Delete all data for all users in the specified context.
      *
-     * @param context $context the context to delete in.
+     * @param context $context the context to delete from.
      */
     public static function delete_data_for_all_users_in_context(context $context) {
+        global $DB;
+
+        if ($context->contextlevel != CONTEXT_COURSE) {
+            return;
+        }
+
+        $sql = "SELECT s.id
+            FROM {qbank_genai_openai_settings} s
+            INNER JOIN {context} c ON c.instanceid = s.courseid AND c.contextlevel = :contextlevel
+            WHERE c.id = :contextid
+        ";
+
+        $params = [
+            'contextid' => $context->id,
+            'contextlevel' => CONTEXT_COURSE,
+        ];
+
+        $recordids = [];
+
+        $rs = $DB->get_recordset_sql($sql, $params);
+
+        foreach ($rs as $record) {
+            $recordids[] = $record->id;
+        }
+
+        $rs->close();
+
+        foreach ($recordids as $recordid) {
+            $DB->delete_records('qbank_genai_openai_settings', ['id' => $recordid]);
+        }
     }
 
     /**
@@ -91,6 +208,18 @@ class provider implements
      * @param approved_contextlist $contextlist a list of contexts approved for deletion.
      */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
+        global $DB;
+
+        $user = $contextlist->get_user();
+        $contexts = $contextlist->get_contexts();
+
+        foreach ($contexts as $context) {
+            $data = self::get_records($user->id, $context->id);
+
+            foreach ($data as $record) {
+                $DB->delete_records('qbank_genai_openai_settings', ['id' => $record->id]);
+            }
+        }
     }
 
     /**
@@ -99,6 +228,18 @@ class provider implements
      * @param   approved_userlist       $userlist The approved context and user information to delete information for.
      */
     public static function delete_data_for_users(approved_userlist $userlist) {
+        global $DB;
+
+        $context = $userlist->get_context();
+        $userids = $userlist->get_userids();
+
+        foreach ($userids as $userid) {
+            $data = self::get_records($userid, $context->id);
+
+            foreach ($data as $record) {
+                $DB->delete_records('qbank_genai_openai_settings', ['id' => $record->id]);
+            }
+        }
     }
 
 }
