@@ -48,9 +48,8 @@ $string['parsingerror'] = 'Error while parsing the generated tags.';
 
 $string['pluginname'] = 'Generative AI Question Bank';
 
-$string['privacy:metadata:qbank_genai_openai_settings:userid'] = 'Table that stores data related to the OpenAI API';
 $string['privacy:metadata:qbank_genai_openai_settings'] = 'The user\'s ID';
-
+$string['privacy:metadata:qbank_genai_openai_settings:userid'] = 'Table that stores data related to the OpenAI API';
 
 $string['return'] = 'Return to question bank';
 
