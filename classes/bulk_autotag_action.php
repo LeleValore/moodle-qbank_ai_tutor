@@ -27,15 +27,15 @@ use core_question\local\bank\view;
  */
 class bulk_autotag_action extends \core_question\local\bank\bulk_action_base {
 
-    /** @var view Question bank view. */
+    /** @var view|null Question bank view. */
     protected $qbank;
 
     /**
      * Constructor.
      *
-     * @param view $qbank The question bank view.
+     * @param view|null $qbank The question bank view.
      */
-    public function __construct(view $qbank) {
+    public function __construct(?view $qbank) {
         $this->qbank = $qbank;
     }
 
