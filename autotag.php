@@ -64,7 +64,7 @@ if (empty($questionlist)) {
     throw new moodle_exception('noquestionselected', 'qbank_genai');
 }
 
-// CHeck that the user has the capability to tag questions.
+// Check that the user has the capability to tag questions.
 foreach ($questionlist as $questionid) {
     question_require_capability_on($questionid, 'tag');
 }

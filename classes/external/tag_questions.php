@@ -49,7 +49,7 @@ class tag_questions extends external_api {
 
     /**
      * Returns description of method result value
-     * @return external_multiple_structure
+     * @return external_value
      */
     public static function execute_returns() {
         return new external_value(PARAM_TEXT, 'Result of the autotagging');
@@ -58,7 +58,7 @@ class tag_questions extends external_api {
     /**
      * Tag questions
      * @param object $questionlist The list of question IDs to tag
-     * @return array of tags
+     * @return string The result
      */
     public static function execute($questionlist) {
         $params = self::validate_parameters(self::execute_parameters(), ['questionlist' => $questionlist]);
@@ -136,7 +136,7 @@ class tag_questions extends external_api {
             try {
                 $tags = json_decode($response->output[0]->content[0]->text)->tags;
             } catch (\Exception $e) {
-                throw new \Exception(get_string('parsingerror', 'qbank_genai'));
+                throw new \Exception(get_string('autotagparsingerror', 'qbank_genai'));
             }
 
             \core_tag_tag::set_item_tags('core_question', 'question', $qid, \context::instance_by_id($question->contextid), $tags);
