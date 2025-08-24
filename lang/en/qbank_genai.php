@@ -30,6 +30,7 @@ $string['assistantid_help'] = 'ID concerning the <a href="https://platform.opena
 
 $string['autotag'] = 'AutoTag';
 $string['autotagintro'] = 'The following questions will be auto-tagged:';
+$string['autotagparsingerror'] = 'Error while parsing the generated tags.';
 $string['autotagsuccess'] = '{$a} questions have been tagged successfully.';
 
 $string['errormsg_noneselected'] = 'Please select at least one resource.';
@@ -43,8 +44,6 @@ $string['ongoingtasks'] = 'The following generation tasks are ongoing:';
 $string['openaiapikey'] = 'OpenAI API key';
 $string['openaiapikey_help'] = 'To be created at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>.';
 $string['openaiapisettings'] = 'OpenAI API Settings';
-
-$string['parsingerror'] = 'Error while parsing the generated tags.';
 
 $string['pluginname'] = 'Generative AI Question Bank';
 
