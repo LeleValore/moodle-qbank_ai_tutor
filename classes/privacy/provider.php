@@ -26,7 +26,7 @@ use core_privacy\local\request\userlist;
 /**
  * Privacy Subsystem for qbank_genai.
  *
- * @package    local_genai
+ * @package    qbank_genai
  * @copyright  2025 Niko Hoogeveen <nikohoogeveen@catalyst-ca.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
