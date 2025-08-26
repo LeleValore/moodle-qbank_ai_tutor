@@ -61,6 +61,18 @@ function xmldb_qbank_genai_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2024121205, 'qbank', 'genai');
     }
 
+    if ($oldversion < 2025082601) {
+        // Changing precision of field openaiapikey on table qbank_genai_openai_settings to (200).
+        $table = new xmldb_table('qbank_genai_openai_settings');
+        $field = new xmldb_field('openaiapikey', XMLDB_TYPE_CHAR, '200', null, XMLDB_NOTNULL, null, null, 'userid');
+
+        // Launch change of precision for field openaiapikey.
+        $dbman->change_field_precision($table, $field);
+
+        // Genai savepoint reached.
+        upgrade_plugin_savepoint(true, 2025082601, 'qbank', 'genai');
+    }
+
     return true;
 }
 
