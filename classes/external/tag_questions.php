@@ -76,9 +76,11 @@ class tag_questions extends external_api {
         $client = \OpenAI::client($openaiapikey);
 
         foreach ($questionlist as $qid) {
-            question_require_capability_on($qid, 'tag');
-
             $question = \question_bank::load_question($qid);
+
+            $context = \context::instance_by_id($question->contextid);
+            self::validate_context($context);
+            question_require_capability_on($qid, 'tag');
 
             // Check if question has already been tagged, if so, skip it.
             $questiontags = \core_tag_tag::get_item_tags('core_question', 'question', $qid);
