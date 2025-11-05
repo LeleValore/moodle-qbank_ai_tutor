@@ -137,12 +137,13 @@ class generation_task extends \core\task\adhoc_task {
                 sleep(1);
                 $response = $client->threads()->runs()->retrieve($threadid, $runid);
                 $status = $response->status;
+                mtrace("Status: ".$status);
             } while ($status != 'completed' && $status != 'failed');
 
             if ($status == 'failed') {
-                throw new \Exception('Error during run, check task logs for further details.');
                 mtrace("Error during run:");
                 mtrace(var_export($response->lastError->toArray()));
+                throw new \Exception('Error during run, check task logs for further details.');
             }
 
             // Completed: Get the Assistant's Response.
