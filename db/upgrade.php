@@ -36,7 +36,6 @@ function xmldb_qbank_genai_upgrade($oldversion) {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2024121205) {
-
         // Define table qbank_genai_openai_settings to be created.
         $table = new xmldb_table('qbank_genai_openai_settings');
 
@@ -75,6 +74,3 @@ function xmldb_qbank_genai_upgrade($oldversion) {
 
     return true;
 }
-
-
-

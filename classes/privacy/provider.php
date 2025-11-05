@@ -33,10 +33,9 @@ use core_privacy\local\request\userlist;
 class provider implements
         // This plugin does not store any data itself.
         // It has no database tables, and it purely acts as a conduit, sending data externally.
-        \core_privacy\local\metadata\provider,
-        \core_privacy\local\request\core_userlist_provider,
-        \core_privacy\local\request\plugin\provider {
-
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
     /**
      * Return the fields which contain personal data.
      *
@@ -100,5 +99,4 @@ class provider implements
      */
     public static function delete_data_for_users(approved_userlist $userlist) {
     }
-
 }

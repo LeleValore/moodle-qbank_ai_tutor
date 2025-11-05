@@ -18,7 +18,7 @@ namespace qbank_genai\form;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir.'/formslib.php');
+require_once($CFG->libdir . '/formslib.php');
 
 use moodleform;
 
@@ -30,7 +30,6 @@ use moodleform;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class generation_form extends moodleform {
-
     /**
      * Form definition: The user can select the resources for which questions shall be generated.
      */
@@ -77,5 +76,4 @@ class generation_form extends moodleform {
 
         return $errors;
     }
-
 }

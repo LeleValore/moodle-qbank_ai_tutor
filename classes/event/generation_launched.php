@@ -26,7 +26,6 @@ use core\session\exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class generation_launched extends \core\event\base {
-
     /**
      * Set basic properties for the event.
      */

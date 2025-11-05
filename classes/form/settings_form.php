@@ -18,7 +18,7 @@ namespace qbank_genai\form;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir.'/formslib.php');
+require_once($CFG->libdir . '/formslib.php');
 
 use moodleform;
 
@@ -30,7 +30,6 @@ use moodleform;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class settings_form extends moodleform {
-
     /**
      * Form definition.
      */
@@ -61,5 +60,4 @@ class settings_form extends moodleform {
     public function validation($data, $files) {
         return [];
     }
-
 }

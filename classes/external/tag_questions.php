@@ -23,8 +23,8 @@ use core_external\external_value;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot.'/question/bank/genai/lib.php');
-require_once($CFG->dirroot.'/question/bank/genai/vendor/autoload.php');
+require_once($CFG->dirroot . '/question/bank/genai/lib.php');
+require_once($CFG->dirroot . '/question/bank/genai/vendor/autoload.php');
 
 /**
  * Class tag_questions
@@ -34,7 +34,6 @@ require_once($CFG->dirroot.'/question/bank/genai/vendor/autoload.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class tag_questions extends external_api {
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -92,7 +91,7 @@ class tag_questions extends external_api {
             $questiontext = strip_tags($question->questiontext);
 
             foreach ($question->answers as $a) {
-                $questiontext .= '\n- '.strip_tags($a->answer);
+                $questiontext .= '\n- ' . strip_tags($a->answer);
             }
 
             // Call OpenAI to get tags.
@@ -148,5 +147,4 @@ class tag_questions extends external_api {
 
         return get_string('autotagsuccess', 'qbank_genai', $numbersuccessfullytagged);
     }
-
 }
