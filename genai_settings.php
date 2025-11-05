@@ -23,7 +23,7 @@
  */
 
 require('../../../config.php');
-require_once($CFG->dirroot.'/question/bank/genai/lib.php');
+require_once($CFG->dirroot . '/question/bank/genai/lib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
 

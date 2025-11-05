@@ -24,7 +24,6 @@ namespace qbank_genai;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class navigation extends \core_question\local\bank\navigation_node_base {
-
     /**
      * Returns the navigation title.
      *
@@ -52,5 +51,4 @@ class navigation extends \core_question\local\bank\navigation_node_base {
         global $COURSE;
         return new \moodle_url('/question/bank/genai/index.php', ['courseid' => $COURSE->id]);
     }
-
 }

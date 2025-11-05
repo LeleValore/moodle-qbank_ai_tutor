@@ -26,7 +26,6 @@ use core_question\local\bank\question_action_base;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class autotag_action extends question_action_base {
-
     /**
      * Returns the URL, icon, and label for the action.
      *
@@ -57,5 +56,4 @@ class autotag_action extends question_action_base {
     public function get_menu_position(): int {
         return 350;
     }
-
 }

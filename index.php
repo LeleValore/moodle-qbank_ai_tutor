@@ -23,7 +23,7 @@
  */
 
 require('../../../config.php');
-require_once($CFG->dirroot.'/question/bank/genai/lib.php');
+require_once($CFG->dirroot . '/question/bank/genai/lib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
 
@@ -64,7 +64,6 @@ if (empty($openaiapikey)) {
 // Show ongoing generation tasks (if any).
 $existingtasks = $DB->get_records('task_adhoc', ['userid' => $USER->id, 'component' => 'qbank_genai']);
 if (!empty($existingtasks)) {
-
     echo html_writer::start_tag('div', ['class' => 'alert alert-info']);
     echo html_writer::tag('p', get_string('ongoingtasks', 'qbank_genai'));
     echo html_writer::start_tag('ul');
@@ -79,7 +78,6 @@ if (!empty($existingtasks)) {
     echo html_writer::end_tag('li');
     echo html_writer::end_tag('ul');
     echo html_writer::end_tag('div');
-
 }
 
 // Get course resources.

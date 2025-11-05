@@ -18,8 +18,8 @@ namespace qbank_genai\task;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot.'/question/bank/genai/lib.php');
-require_once($CFG->dirroot.'/question/bank/genai/vendor/autoload.php');
+require_once($CFG->dirroot . '/question/bank/genai/lib.php');
+require_once($CFG->dirroot . '/question/bank/genai/vendor/autoload.php');
 
 /**
  * Class generation_task
@@ -29,7 +29,6 @@ require_once($CFG->dirroot.'/question/bank/genai/vendor/autoload.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class generation_task extends \core\task\adhoc_task {
-
     /**
      * Factory method for this class
      *
@@ -69,7 +68,7 @@ class generation_task extends \core\task\adhoc_task {
         $assistantid = qbank_genai_get_or_create_openai_assistant($data->courseid, $this->get_userid());
 
         $category = qbank_genai_create_question_category($data->contextid, qbank_genai_get_resource_names_string($data->resources));
-        mtrace("Category created: ".$category->name);
+        mtrace("Category created: " . $category->name);
 
         foreach ($data->resources as $resource) {
             $file = qbank_genai_get_fileinfo_for_resource($resource->id);
@@ -137,7 +136,7 @@ class generation_task extends \core\task\adhoc_task {
                 sleep(1);
                 $response = $client->threads()->runs()->retrieve($threadid, $runid);
                 $status = $response->status;
-                mtrace("Status: ".$status);
+                mtrace("Status: " . $status);
             } while ($status != 'completed' && $status != 'failed');
 
             if ($status == 'failed') {

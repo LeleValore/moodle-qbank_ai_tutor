@@ -26,7 +26,6 @@ use core_question\local\bank\view;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class bulk_autotag_action extends \core_question\local\bank\bulk_action_base {
-
     /** @var view|null Question bank view. */
     protected $qbank;
 
@@ -75,5 +74,4 @@ class bulk_autotag_action extends \core_question\local\bank\bulk_action_base {
     public function get_bulk_action_capabilities(): ?array {
         return ['moodle/question:tagall'];
     }
-
 }

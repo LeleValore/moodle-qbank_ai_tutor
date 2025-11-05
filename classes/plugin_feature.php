@@ -27,7 +27,6 @@ use core_question\local\bank\view;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class plugin_feature extends \core_question\local\bank\plugin_features_base {
-
     /**
      * This method will return the object for the navigation node.
      *
@@ -56,5 +55,4 @@ class plugin_feature extends \core_question\local\bank\plugin_features_base {
     public function get_bulk_actions(?view $qbank = null): array {
         return [new bulk_autotag_action($qbank)];
     }
-
 }

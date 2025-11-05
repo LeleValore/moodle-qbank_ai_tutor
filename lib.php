@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir.'/questionlib.php'); // Needed for get_next_version().
+require_once($CFG->libdir . '/questionlib.php'); // Needed for get_next_version().
 
 /**
  * Defines the necessary capabilities for this plugin.
@@ -189,8 +189,8 @@ function qbank_genai_create_question_category(int $contextid, string $resourcede
     global $DB;
 
     $record = [
-        'name'       => 'GenAI ('.date('d/m/Y H:i:s').')',
-        'info'       => 'Generative AI-based questions on: '.format_string($resourcedescription),
+        'name'       => 'GenAI (' . date('d/m/Y H:i:s') . ')',
+        'info'       => 'Generative AI-based questions on: ' . format_string($resourcedescription),
         'infoformat' => FORMAT_HTML,
         'stamp'      => make_unique_id_code(),
         'sortorder'  => 999,
