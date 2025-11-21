@@ -33,6 +33,7 @@ $PAGE->set_url($url);
 $course = get_course($courseid);
 
 require_login($course);
+core_question\local\bank\helper::require_plugin_enabled('qbank_genai');
 
 $course = course_get_format($course)->get_course();
 
@@ -47,12 +48,6 @@ $PAGE->set_title(get_string('title', 'qbank_genai'));
 $PAGE->set_heading(format_string($course->fullname));
 
 echo $OUTPUT->header();
-if (!\core\plugininfo\qbank::is_plugin_enabled('qbank_genai')) { // ERN
-        echo $OUTPUT->heading(get_string('title', 'qbank_genai'));
-        echo "<p>This plugin is disabled.</p>";
-        echo $OUTPUT->footer();
-        return;
-}
 
 // Print tertiary navigation.
 $renderer = $PAGE->get_renderer('core_question', 'bank');

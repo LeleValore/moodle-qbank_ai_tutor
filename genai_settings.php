@@ -33,6 +33,7 @@ $PAGE->set_url($url);
 $course = get_course($courseid);
 
 require_login($course);
+core_question\local\bank\helper::require_plugin_enabled('qbank_genai');
 
 $course = course_get_format($course)->get_course();
 
