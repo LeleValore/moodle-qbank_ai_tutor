@@ -46,6 +46,7 @@ function qbank_genai_extend_navigation_course(navigation_node $navigation, stdCl
     if (!\core\plugininfo\qbank::is_plugin_enabled('qbank_genai')) {
         return;
     }
+
     if (!isloggedin() || isguestuser() || !has_all_capabilities(qbank_genai_required_capabilities(), $context)) {
         return;
     }

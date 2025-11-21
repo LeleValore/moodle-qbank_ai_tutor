@@ -31,6 +31,7 @@ $url = new moodle_url('/question/bank/genai/autotag.php', ['courseid' => $course
 $PAGE->set_url($url);
 
 require_login($courseid);
+core_question\local\bank\helper::require_plugin_enabled('qbank_genai');
 
 $context = context_course::instance($courseid);
 $PAGE->set_context($context);
