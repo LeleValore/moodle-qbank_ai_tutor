@@ -128,61 +128,6 @@ function qbank_genai_get_openai_apikey(int $courseid) {
 }
 
 /**
- * Retrieves and - if necessary - creates an OpenAI Assistant for the same level
- * (course-specific/site-wide) as the OpenAI API key.
- *
- * @param int $courseid ID of the course in which questions will be created.
- * @param int $userid ID of the user executing the task.
- * @return string ID of the assistant.
- */
-function qbank_genai_get_or_create_openai_assistant(int $courseid, int $userid) {
-    global $DB;
-
-    $assistantid = null;
-
-    $coursesettings = $DB->get_record('qbank_genai_openai_settings', ["courseid" => $courseid, "userid" => $userid]);
-
-    if ($coursesettings && !empty($coursesettings->openaiapikey)) {
-        // Course-specific.
-        $assistantid = $coursesettings->assistantid;
-
-        if (empty($assistantid)) {
-            $assistantid = _qbank_genai_create_openai_assistant($coursesettings->openaiapikey);
-            $DB->update_record('qbank_genai_openai_settings', ["id" => $coursesettings->id, "assistantid" => $assistantid]);
-        }
-    } else {
-        // Site-wide.
-        $assistantid = get_config('qbank_genai', 'assistantid');
-
-        if (empty($assistantid)) {
-            $assistantid = _qbank_genai_create_openai_assistant(get_config('qbank_genai', 'openaiapikey'));
-            set_config("assistantid", $assistantid, "qbank_genai");
-        }
-    }
-
-    return $assistantid;
-}
-
-/**
- * Creates an OpenAI Assistant.
- *
- * @param string $apikey The OpenAI API key.
- * @return string ID of the created assistant.
- */
-function _qbank_genai_create_openai_assistant(string $apikey) {
-    $client = OpenAI::client($apikey);
-
-    $response = $client->assistants()->create([
-        'name' => 'MCQ Generator',
-        'instructions' => 'You create multiple-choice questions about the files that you will receive.',
-        'model' => 'gpt-4o',
-        'tools' => [['type' => 'file_search']],
-    ]);
-
-    return $response->id;
-}
-
-/**
  * Creates a new question category in the question bank of the given course. Adapted from /question/tests/generator/lib.php.
  *
  * @param int $contextid The ID of the context

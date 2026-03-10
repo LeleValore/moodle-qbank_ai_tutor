@@ -112,7 +112,7 @@ class provider implements
 
         $data = [];
 
-        $sql = "SELECT s.id, s.courseid, s.userid, s.openaiapikey, s.assistantid
+        $sql = "SELECT s.id, s.courseid, s.userid, s.openaiapikey
             FROM {qbank_genai_openai_settings} s
             INNER JOIN {context} c ON c.instanceid = s.courseid AND c.contextlevel = :contextlevel
             WHERE s.userid = :userid AND c.id = :contextid
@@ -132,7 +132,6 @@ class provider implements
                 'courseid' => $record->courseid,
                 'userid' => transform::user($record->userid),
                 'openaiapikey' => $record->openaiapikey,
-                'assistantid' => $record->assistantid,
             ];
         }
 

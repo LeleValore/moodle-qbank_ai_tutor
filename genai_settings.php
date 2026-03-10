@@ -66,7 +66,7 @@ if ($fromform = $mform->get_data()) {
 
     // Save new settings.
     $DB->insert_record('qbank_genai_openai_settings', ["courseid" => $course->id, "userid" => $USER->id,
-        "openaiapikey" => $fromform->openaiapikey, "assistantid" => $fromform->assistantid]);
+        "openaiapikey" => $fromform->openaiapikey]);
 
     // Redirect to this page again.
     redirect($PAGE->url);

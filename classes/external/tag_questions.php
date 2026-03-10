@@ -96,7 +96,7 @@ class tag_questions extends external_api {
 
             // Call OpenAI to get tags.
             $response = $client->responses()->create([
-                'model' => 'gpt-4o',
+                'model' => 'gpt-5.4',
                 'input' => [
                     [
                         'role' => 'system',
@@ -108,7 +108,6 @@ class tag_questions extends external_api {
                         'content' => $questiontext,
                     ],
                 ],
-                'temperature' => 0.0,
                 'text' => [
                     "format" => [
                         'type' => 'json_schema',

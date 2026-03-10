@@ -35,12 +35,5 @@ if ($hassiteconfig) {
             get_string('openaiapikey_help', 'qbank_genai'),
             '',
         ));
-
-        $settings->add(new admin_setting_configtext(
-            'qbank_genai/assistantid',
-            new lang_string('assistantid', 'qbank_genai'),
-            new lang_string('assistantid_help', 'qbank_genai'),
-            '',
-        ));
     }
 }

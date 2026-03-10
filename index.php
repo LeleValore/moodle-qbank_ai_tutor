@@ -62,25 +62,6 @@ if (empty($openaiapikey)) {
     echo html_writer::tag('div', get_string('noopenaiapikey', 'qbank_genai'), ['class' => 'alert alert-warning']);
 }
 
-// Show ongoing generation tasks (if any).
-$existingtasks = $DB->get_records('task_adhoc', ['userid' => $USER->id, 'component' => 'qbank_genai']);
-if (!empty($existingtasks)) {
-    echo html_writer::start_tag('div', ['class' => 'alert alert-info']);
-    echo html_writer::tag('p', get_string('ongoingtasks', 'qbank_genai'));
-    echo html_writer::start_tag('ul');
-
-    foreach ($existingtasks as $task) {
-        echo html_writer::start_tag('li');
-        $resourcenames = qbank_genai_get_resource_names_string(json_decode($task->customdata)->resources);
-        echo html_writer::tag('span', format_text($resourcenames, FORMAT_PLAIN));
-        echo html_writer::tag('small', userdate($task->timecreated), ['class' => 'text-muted ml-2']);
-    }
-
-    echo html_writer::end_tag('li');
-    echo html_writer::end_tag('ul');
-    echo html_writer::end_tag('div');
-}
-
 // Get course resources.
 $resources = qbank_genai_get_course_resources($course);
 
@@ -89,53 +70,26 @@ if (count($resources) == 0) {
     echo html_writer::tag('p', get_string('noresources', 'qbank_genai'));
     echo html_writer::end_tag('div');
 } else {
-    // Form handling.
     $mform = new \qbank_genai\form\generation_form($url, $resources);
+    $mform->display();
 
-    if ($fromform = $mform->get_data()) {
-        $ids = [];
+    echo html_writer::tag('button', get_string('title', 'qbank_genai'), ["class" => "btn btn-primary mt-3",
+        "id" => "id_questiongenerationbutton"]);
 
-        foreach ($fromform->resource as $id => $selected) {
-            if (boolval($selected)) {
-                $ids[] = $id;
-            }
-        }
-
-        $selectedresources = [];
-
-        foreach ($resources as $resource) {
-            if (in_array($resource->id, $ids)) {
-                $selectedresources[] = (object) [
-                    "id" => $resource->id,
-                    "name" => $resource->name,
-                    "visible" => $resource->visible,
-                ];
-            }
-        }
-
-        // In Moodle 5.0, shared question banks were introduced. New courses do no longer contain a default question bank.
-        global $CFG;
-        if ($CFG->version > 2025041400) {
-            $qbank = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
-            $contextqbankid = context_module::instance($qbank->id)->id;
-        } else {
-            $contextqbankid = $context->id;
-        }
-
-        // Launch generation task.
-        $task = \qbank_genai\task\generation_task::instance($selectedresources, $USER->id, $contextqbankid, $course->id);
-        \core\task\manager::queue_adhoc_task($task); // Add true to avoid duplicates.
-
-        // Log generation task launched.
-        $event = \qbank_genai\event\generation_launched::create(['context' => $context, 'other' => ["ids" => $ids]]);
-        $event->trigger();
-
-        // Redirect to this page again (seems to interfere with mtrace in adhoc task ...).
-        // Also, consider redirecting before any $OUTPUT->...
-        redirect($PAGE->url);
-    } else {
-        $mform->display();
-    }
+    echo html_writer::tag('div', '', ["class" => "mt-3 alert", "id" => "id_questiongenerationresult"]);
 }
+
+// In Moodle 5.0, shared question banks were introduced. New courses do no longer contain a default question bank.
+global $CFG;
+if ($CFG->version > 2025041400) {
+    $qbank = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
+    $contextqbankid = context_module::instance($qbank->id)->id;
+} else {
+    $contextqbankid = $context->id;
+}
+
+// Add Javascript module.
+global $PAGE;
+$PAGE->requires->js_call_amd('qbank_genai/questiongeneration', 'init', [$contextqbankid, $course->id]);
 
 echo $OUTPUT->footer();

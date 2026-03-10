@@ -40,12 +40,7 @@ class settings_form extends moodleform {
 
         $mform->addElement('passwordunmask', 'openaiapikey', get_string('openaiapikey', 'qbank_genai'));
         $mform->setType('openaiapikey', PARAM_ALPHANUMEXT);
-        $mform->addRule('openaiapikey', get_string('noopenaiapikey', 'qbank_genai'), 'required');
         $mform->addHelpButton('openaiapikey', 'openaiapikey', 'qbank_genai');
-
-        $mform->addElement('text', 'assistantid', get_string('assistantid', 'qbank_genai'), ['size' => '35']);
-        $mform->setType('assistantid', PARAM_ALPHANUMEXT);
-        $mform->addHelpButton('assistantid', 'assistantid', 'qbank_genai');
 
         $this->add_action_buttons();
     }

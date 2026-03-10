@@ -72,5 +72,26 @@ function xmldb_qbank_genai_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025082601, 'qbank', 'genai');
     }
 
+    if ($oldversion < 2026030801) {
+        $table = new xmldb_table('qbank_genai_openai_settings');
+
+        // Drop assistantid from course-local settings.
+        $field = new xmldb_field('assistantid');
+
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        // Change of nullability for field openaiapikey.
+        $field = new xmldb_field('openaiapikey', XMLDB_TYPE_CHAR, '200', null, null, null, null, 'userid');
+        $dbman->change_field_notnull($table, $field);
+
+        // Drop assistantid from admin settings.
+        unset_config('assistantid', 'qbank_genai');
+
+        // Genai savepoint reached.
+        upgrade_plugin_savepoint(true, 2026030801, 'qbank', 'genai');
+    }
+
     return true;
 }
