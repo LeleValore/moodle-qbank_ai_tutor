@@ -43,6 +43,23 @@ interface ResponsesContract
     public function retrieve(string $id): RetrieveResponse;
 
     /**
+     * Retrieves a streamed response.
+     *
+     * @see https://platform.openai.com/docs/api-reference/responses/retrieve
+     *
+     * @param  array<string, mixed>  $parameters
+     * @return StreamResponse<CreateStreamedResponse>
+     */
+    public function retrieveStreamed(string $id, array $parameters = []): StreamResponse;
+
+    /**
+     * Cancels a model response with the given ID. Must be marked as 'background' to be cancellable.
+     *
+     * @see https://platform.openai.com/docs/api-reference/responses/cancel
+     */
+    public function cancel(string $id): RetrieveResponse;
+
+    /**
      * Deletes a model response with the given ID.
      *
      * @see https://platform.openai.com/docs/api-reference/responses/delete
@@ -57,4 +74,9 @@ interface ResponsesContract
      * @param  array<string, mixed>  $parameters
      */
     public function list(string $id, array $parameters = []): ListInputItems;
+
+    /**
+     * Manage conversations as a sub-resource of Responses namespace for convenience in tests.
+     */
+    public function conversations(): ConversationsContract;
 }

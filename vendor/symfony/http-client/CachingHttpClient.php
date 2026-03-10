@@ -42,7 +42,7 @@ class CachingHttpClient implements HttpClientInterface, ResetInterface
     public function __construct(HttpClientInterface $client, StoreInterface $store, array $defaultOptions = [])
     {
         if (!class_exists(HttpClientKernel::class)) {
-            throw new \LogicException(sprintf('Using "%s" requires the HttpKernel component, try running "composer require symfony/http-kernel".', __CLASS__));
+            throw new \LogicException(\sprintf('Using "%s" requires the HttpKernel component, try running "composer require symfony/http-kernel".', __CLASS__));
         }
 
         $this->client = $client;
@@ -79,9 +79,13 @@ class CachingHttpClient implements HttpClientInterface, ResetInterface
 
         foreach ($options['normalized_headers'] as $name => $values) {
             if ('cookie' !== $name) {
+                $headerValues = [];
+
                 foreach ($values as $value) {
-                    $request->headers->set($name, substr($value, 2 + \strlen($name)), false);
+                    $headerValues[] = substr($value, 2 + \strlen($name));
                 }
+
+                $request->headers->set($name, $headerValues);
 
                 continue;
             }

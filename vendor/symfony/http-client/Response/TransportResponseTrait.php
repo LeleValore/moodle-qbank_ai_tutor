@@ -45,6 +45,7 @@ trait TransportResponseTrait
     private \InflateContext|bool|null $inflate = null;
     private ?array $finalInfo = null;
     private ?LoggerInterface $logger = null;
+    private bool $didTimeout = false;
 
     public function getStatusCode(): int
     {
@@ -126,7 +127,7 @@ trait TransportResponseTrait
     {
         $this->shouldBuffer = true;
 
-        if ($this->initializer && null === $this->info['error']) {
+        if ($this->initializer && null === $this->info['error'] && !$this->didTimeout) {
             self::initialize($this);
             $this->checkStatusCode();
         }
@@ -183,7 +184,8 @@ trait TransportResponseTrait
                         unset($responses[$j]);
                         continue;
                     } elseif ($elapsedTimeout >= $timeoutMax) {
-                        $multi->handlesActivity[$j] = [new ErrorChunk($response->offset, sprintf('Idle timeout reached for "%s".', $response->getInfo('url')))];
+                        $response->didTimeout = true;
+                        $multi->handlesActivity[$j] = [new ErrorChunk($response->offset, \sprintf('Idle timeout reached for "%s".', $response->getInfo('url')))];
                         $multi->lastTimeout ??= $lastActivity;
                         $elapsedTimeout = $timeoutMax;
                     } else {
@@ -196,12 +198,12 @@ trait TransportResponseTrait
                     while ($multi->handlesActivity[$j] ?? false) {
                         if (\is_string($chunk = array_shift($multi->handlesActivity[$j]))) {
                             if (null !== $response->inflate && false === $chunk = @inflate_add($response->inflate, $chunk)) {
-                                $multi->handlesActivity[$j] = [null, new TransportException(sprintf('Error while processing content unencoding for "%s".', $response->getInfo('url')))];
+                                $multi->handlesActivity[$j] = [null, new TransportException(\sprintf('Error while processing content unencoding for "%s".', $response->getInfo('url')))];
                                 continue;
                             }
 
                             if ('' !== $chunk && null !== $response->content && \strlen($chunk) !== fwrite($response->content, $chunk)) {
-                                $multi->handlesActivity[$j] = [null, new TransportException(sprintf('Failed writing %d bytes to the response buffer.', \strlen($chunk)))];
+                                $multi->handlesActivity[$j] = [null, new TransportException(\sprintf('Failed writing %d bytes to the response buffer.', \strlen($chunk)))];
                                 continue;
                             }
 
@@ -233,7 +235,7 @@ trait TransportResponseTrait
                         } elseif ($chunk instanceof FirstChunk) {
                             if ($response->logger) {
                                 $info = $response->getInfo();
-                                $response->logger->info(sprintf('Response: "%s %s"', $info['http_code'], $info['url']));
+                                $response->logger->info(\sprintf('Response: "%s %s"', $info['http_code'], $info['url']));
                             }
 
                             $response->inflate = \extension_loaded('zlib') && $response->inflate && 'gzip' === ($response->headers['content-encoding'][0] ?? null) ? inflate_init(\ZLIB_ENCODING_GZIP) : null;
@@ -299,7 +301,7 @@ trait TransportResponseTrait
                 continue;
             }
 
-            if (-1 === self::select($multi, min($timeoutMin, $timeoutMax - $elapsedTimeout))) {
+            if (-1 === self::select($multi, min($timeoutMin, max(0, $timeoutMax - $elapsedTimeout)))) {
                 usleep((int) min(500, 1E6 * $timeoutMin));
             }
 

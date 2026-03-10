@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OpenAI;
 
 use OpenAI\Contracts\ClientContract;
+use OpenAI\Contracts\Resources\RealtimeContract;
 use OpenAI\Contracts\Resources\ThreadsContract;
 use OpenAI\Contracts\Resources\VectorStoresContract;
 use OpenAI\Contracts\TransporterContract;
@@ -13,6 +14,8 @@ use OpenAI\Resources\Audio;
 use OpenAI\Resources\Batches;
 use OpenAI\Resources\Chat;
 use OpenAI\Resources\Completions;
+use OpenAI\Resources\Containers;
+use OpenAI\Resources\Conversations;
 use OpenAI\Resources\Edits;
 use OpenAI\Resources\Embeddings;
 use OpenAI\Resources\Files;
@@ -21,6 +24,7 @@ use OpenAI\Resources\FineTuning;
 use OpenAI\Resources\Images;
 use OpenAI\Resources\Models;
 use OpenAI\Resources\Moderations;
+use OpenAI\Resources\Realtime;
 use OpenAI\Resources\Responses;
 use OpenAI\Resources\Threads;
 use OpenAI\Resources\VectorStores;
@@ -46,6 +50,16 @@ final class Client implements ClientContract
     }
 
     /**
+     * Create and manage conversations to store and retrieve conversation state across Response API calls.
+     *
+     * @see https://platform.openai.com/docs/api-reference/conversations
+     */
+    public function conversations(): Conversations
+    {
+        return new Conversations($this->transporter);
+    }
+
+    /**
      * Given a prompt, the model will return one or more predicted completions, and can also return the probabilities
      * of alternative tokens at each position.
      *
@@ -64,6 +78,16 @@ final class Client implements ClientContract
     public function chat(): Chat
     {
         return new Chat($this->transporter);
+    }
+
+    /**
+     * Create and manage containers for use with the Code Interpreter tool.
+     *
+     * @see https://platform.openai.com/docs/api-reference/containers
+     */
+    public function containers(): Containers
+    {
+        return new Containers($this->transporter);
     }
 
     /**
@@ -166,6 +190,16 @@ final class Client implements ClientContract
     public function assistants(): Assistants
     {
         return new Assistants($this->transporter);
+    }
+
+    /**
+     * Communicate with a model in real time using WebRTC or WebSockets.
+     *
+     * @see https://platform.openai.com/docs/api-reference/realtime
+     */
+    public function realtime(): RealtimeContract
+    {
+        return new Realtime($this->transporter);
     }
 
     /**

@@ -39,7 +39,7 @@ class ScopingHttpClient implements HttpClientInterface, ResetInterface, LoggerAw
         $this->defaultRegexp = $defaultRegexp;
 
         if (null !== $defaultRegexp && !isset($defaultOptionsByRegexp[$defaultRegexp])) {
-            throw new InvalidArgumentException(sprintf('No options are mapped to the provided "%s" default regexp.', $defaultRegexp));
+            throw new InvalidArgumentException(\sprintf('No options are mapped to the provided "%s" default regexp.', $defaultRegexp));
         }
     }
 
@@ -56,9 +56,11 @@ class ScopingHttpClient implements HttpClientInterface, ResetInterface, LoggerAw
     {
         $e = null;
         $url = self::parseUrl($url, $options['query'] ?? []);
+        $resolved = false;
 
         if (\is_string($options['base_uri'] ?? null)) {
             $options['base_uri'] = self::parseUrl($options['base_uri']);
+            $resolved = true;
         }
 
         try {
@@ -72,8 +74,13 @@ class ScopingHttpClient implements HttpClientInterface, ResetInterface, LoggerAw
             $options = self::mergeDefaultOptions($options, $defaultOptions, true);
             if (\is_string($options['base_uri'] ?? null)) {
                 $options['base_uri'] = self::parseUrl($options['base_uri']);
+                $resolved = true;
             }
             $url = implode('', self::resolveUrl($url, $options['base_uri'] ?? null, $defaultOptions['query'] ?? []));
+        }
+
+        if ($resolved) {
+            unset($options['base_uri']);
         }
 
         foreach ($this->defaultOptionsByRegexp as $regexp => $defaultOptions) {
