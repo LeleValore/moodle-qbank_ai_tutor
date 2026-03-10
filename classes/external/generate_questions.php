@@ -67,8 +67,10 @@ class generate_questions extends external_api {
      * @return string The result
      */
     public static function execute($contextid, $courseid, $fileid, $numberquestions) {
-        $params = self::validate_parameters(self::execute_parameters(),
-            ['contextID' => $contextid, 'courseID' => $courseid, 'fileID' => $fileid, 'numberQuestions' => $numberquestions]);
+        $params = self::validate_parameters(
+            self::execute_parameters(),
+            ['contextID' => $contextid, 'courseID' => $courseid, 'fileID' => $fileid, 'numberQuestions' => $numberquestions]
+        );
 
         $context = \context_course::instance($courseid);
         self::validate_context($context);
@@ -108,7 +110,7 @@ class generate_questions extends external_api {
         $systemprompt .= "Each question shall have between 3 and 5 answers and only 1 correct answer. Make sure all distractors ";
         $systemprompt .= "are plausible and that the correct answer is not much longer than any distractor.";
 
-        $userprompt = 'Create '.$numberquestions.' multiple choice questions on the content of the provided file.';
+        $userprompt = 'Create ' . $numberquestions . ' multiple choice questions on the content of the provided file.';
 
         // Call OpenAI to generate questions.
         $response = $client->responses()->create([
@@ -208,8 +210,11 @@ class generate_questions extends external_api {
                 qbank_genai_create_question($questionname, $question, $category);
             }
 
-            return get_string('questiongenerationsuccess', 'qbank_genai',
-                ['number' => count($questiondata), 'category' => $category->name]);
+            return get_string(
+                'questiongenerationsuccess',
+                'qbank_genai',
+                ['number' => count($questiondata), 'category' => $category->name]
+            );
         } else {
             throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
         }
