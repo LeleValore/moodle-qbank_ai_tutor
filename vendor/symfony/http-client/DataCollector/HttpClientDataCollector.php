@@ -64,7 +64,9 @@ final class HttpClientDataCollector extends DataCollector implements LateDataCol
             $this->data['error_count'] += $errorCount;
             $this->data['clients'][$name]['error_count'] += $errorCount;
 
-            $client->reset();
+            if ($traces) {
+                $client->reset();
+            }
         }
     }
 
@@ -201,11 +203,14 @@ final class HttpClientDataCollector extends DataCollector implements LateDataCol
                 $dataArg[] = '--data-raw '.$this->escapePayload($body);
             } elseif (\is_array($body)) {
                 try {
-                    $body = explode('&', self::normalizeBody($body));
+                    $body = self::normalizeBody($body);
                 } catch (TransportException) {
                     return null;
                 }
-                foreach ($body as $value) {
+                if (!\is_string($body)) {
+                    return null;
+                }
+                foreach (explode('&', $body) as $value) {
                     $dataArg[] = '--data-raw '.$this->escapePayload(urldecode($value));
                 }
             } else {
@@ -233,8 +238,8 @@ final class HttpClientDataCollector extends DataCollector implements LateDataCol
             }
 
             if (preg_match('/^> ([A-Z]+)/', $line, $match)) {
-                $command[] = sprintf('--request %s', $match[1]);
-                $command[] = sprintf('--url %s', escapeshellarg($url));
+                $command[] = \sprintf('--request %s', $match[1]);
+                $command[] = \sprintf('--url %s', escapeshellarg($url));
                 continue;
             }
 
@@ -252,7 +257,7 @@ final class HttpClientDataCollector extends DataCollector implements LateDataCol
     {
         static $useProcess;
 
-        if ($useProcess ??= function_exists('proc_open') && class_exists(Process::class)) {
+        if ($useProcess ??= \function_exists('proc_open') && class_exists(Process::class)) {
             return substr((new Process(['', $payload]))->getCommandLine(), 3);
         }
 

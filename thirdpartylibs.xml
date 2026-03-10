@@ -3,28 +3,28 @@
     <library>
         <location>vendor/openai-php/client/</location>
         <name>openai-php/client</name>
-        <version>v0.10.1</version>
+        <version>v0.19.1</version>
         <license>MIT</license>
         <licenseversion></licenseversion>
     </library>
     <library>
         <location>vendor/nyholm/psr7/</location>
         <name>nyholm/psr7</name>
-        <version>v1.8.1</version>
+        <version>v1.8.2</version>
         <license>MIT</license>
         <licenseversion></licenseversion>
     </library>
     <library>
         <location>vendor/php-http/discovery/</location>
         <name>php-http/discovery</name>
-        <version>v1.19.4</version>
+        <version>v1.20.0</version>
         <license>MIT</license>
         <licenseversion></licenseversion>
     </library>
     <library>
         <location>vendor/symfony/http-client/</location>
         <name>symfony/http-client</name>
-        <version>v6.4.9</version>
+        <version>v6.4.34</version>
         <license>MIT</license>
         <licenseversion></licenseversion>
     </library>
