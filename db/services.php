@@ -28,6 +28,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
+    'qbank_genai_generate_questions' => [
+        'classname'   => 'qbank_genai\external\generate_questions',
+        'description' => 'Sends a file to OpenAI to generate questions.',
+        'type'        => 'write',
+        'ajax'        => true,
+        'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
+    ],
     'qbank_genai_autotag_questions' => [
         'classname'   => 'qbank_genai\external\tag_questions',
         'description' => 'Sends questions to OpenAI to get tags.',

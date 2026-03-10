@@ -14,38 +14,50 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * AMD module for the AutoTag feature.
+ * AMD module for the question generation feature.
  *
- * @module     qbank_genai/autotag
- * @copyright  2025 Christian Grévisse <christian.grevisse@uni.lu>
+ * @module     qbank_genai/questiongeneration
+ * @copyright  2026 Christian Grévisse <christian.grevisse@uni.lu>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 import Ajax from 'core/ajax';
 import Selectors from 'qbank_genai/selectors';
 
-class AutoTag {
-    constructor(questionlist) {
-        this.questionlist = questionlist;
+class QuestionGeneration {
+    constructor(contextID, courseID) {
+        this.contextID = contextID;
+        this.courseID = courseID;
         this.registerEventListeners();
         this.hideMessage();
     }
 
     registerEventListeners() {
-        const tagger = document.querySelector(Selectors.ELEMENTS.AUTOTAGBUTTON);
-        if (tagger) {
-            tagger.addEventListener('click', async() => {
+        const generatorButton = document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONBUTTON);
+        if (generatorButton) {
+            generatorButton.addEventListener('click', async() => {
 
                 this.hideMessage();
 
-                tagger.setAttribute('disabled', 'disabled');
-                const oldText = tagger.innerHTML;
-                tagger.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+                const fileID = parseInt(document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONFILESELECT).value);
+                const numberQuestions = parseInt(document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONNUMBERINPUT).value);
+
+                if (isNaN(numberQuestions) || numberQuestions <= 0) {
+                    this.showMessage("Enter a positive number of questions!", true);
+                    return;
+                }
+
+                generatorButton.setAttribute('disabled', 'disabled');
+                const oldText = generatorButton.innerHTML;
+                generatorButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
 
                 const request = {
-                    methodname: 'qbank_genai_autotag_questions',
+                    methodname: 'qbank_genai_generate_questions',
                     args: {
-                        questionlist: this.questionlist,
+                        contextID: this.contextID,
+                        courseID: this.courseID,
+                        fileID: fileID,
+                        numberQuestions: numberQuestions,
                     }
                 };
 
@@ -59,15 +71,15 @@ class AutoTag {
                 } catch (error) {
                     this.showMessage(error.message, true);
                 } finally {
-                    tagger.removeAttribute('disabled');
-                    tagger.innerHTML = oldText;
+                    generatorButton.removeAttribute('disabled');
+                    generatorButton.innerHTML = oldText;
                 }
             });
         }
     }
 
     showMessage(message, error) {
-        const resultField = document.querySelector(Selectors.ELEMENTS.AUTOTAGRESULT);
+        const resultField = document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONRESULT);
         if (resultField) {
             resultField.innerHTML = message;
             resultField.style.display = 'block';
@@ -76,7 +88,7 @@ class AutoTag {
     }
 
     hideMessage() {
-        const resultField = document.querySelector(Selectors.ELEMENTS.AUTOTAGRESULT);
+        const resultField = document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONRESULT);
         if (resultField) {
             resultField.innerHTML = '';
             resultField.style.display = 'none';
@@ -85,6 +97,6 @@ class AutoTag {
     }
 }
 
-export const init = (questionlist) => {
-    new AutoTag(questionlist);
+export const init = (contextID, courseID) => {
+    new QuestionGeneration(contextID, courseID);
 };

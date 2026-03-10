@@ -24,6 +24,10 @@
 export default {
     ELEMENTS: {
         AUTOTAGBUTTON: '#id_autotagbutton',
-        RESULTFIELD: '#id_autotagresult',
+        AUTOTAGRESULT: '#id_autotagresult',
+        QUESTIONGENERATIONFILESELECT: '#id_file',
+        QUESTIONGENERATIONNUMBERINPUT: '#id_numberquestions',
+        QUESTIONGENERATIONBUTTON: '#id_questiongenerationbutton',
+        QUESTIONGENERATIONRESULT: '#id_questiongenerationresult'
     }
 };
