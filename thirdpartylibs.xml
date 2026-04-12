@@ -24,7 +24,7 @@
     <library>
         <location>vendor/symfony/http-client/</location>
         <name>symfony/http-client</name>
-        <version>v6.4.34</version>
+        <version>v6.4.36</version>
         <license>MIT</license>
         <licenseversion></licenseversion>
     </library>

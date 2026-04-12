@@ -86,16 +86,16 @@
         },
         {
             "name": "openai-php/client",
-            "version": "v0.19.0",
+            "version": "v0.19.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/openai-php/client.git",
-                "reference": "c52f871fba345c6cbd8a3945c4d167e2e21266fd"
+                "reference": "f2b1ce48b1c011ebc2abb255db5abf82ef4a6a44"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/openai-php/client/zipball/c52f871fba345c6cbd8a3945c4d167e2e21266fd",
-                "reference": "c52f871fba345c6cbd8a3945c4d167e2e21266fd",
+                "url": "https://api.github.com/repos/openai-php/client/zipball/f2b1ce48b1c011ebc2abb255db5abf82ef4a6a44",
+                "reference": "f2b1ce48b1c011ebc2abb255db5abf82ef4a6a44",
                 "shasum": ""
             },
             "require": {
@@ -157,7 +157,7 @@
             ],
             "support": {
                 "issues": "https://github.com/openai-php/client/issues",
-                "source": "https://github.com/openai-php/client/tree/v0.19.0"
+                "source": "https://github.com/openai-php/client/tree/v0.19.1"
             },
             "funding": [
                 {
@@ -173,7 +173,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-02-10T11:15:52+00:00"
+            "time": "2026-03-17T20:53:51+00:00"
         },
         {
             "name": "php-http/discovery",
@@ -642,16 +642,16 @@
         },
         {
             "name": "symfony/http-client",
-            "version": "v6.4.34",
+            "version": "v6.4.36",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "0dc71f52e5d35bb045fd0f82b1a80c027971d551"
+                "reference": "1baea3a592ec5ee1f58de6548a034268d4946db6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/0dc71f52e5d35bb045fd0f82b1a80c027971d551",
-                "reference": "0dc71f52e5d35bb045fd0f82b1a80c027971d551",
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/1baea3a592ec5ee1f58de6548a034268d4946db6",
+                "reference": "1baea3a592ec5ee1f58de6548a034268d4946db6",
                 "shasum": ""
             },
             "require": {
@@ -716,7 +716,7 @@
                 "http"
             ],
             "support": {
-                "source": "https://github.com/symfony/http-client/tree/v6.4.34"
+                "source": "https://github.com/symfony/http-client/tree/v6.4.36"
             },
             "funding": [
                 {
@@ -736,7 +736,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-18T07:27:25+00:00"
+            "time": "2026-03-23T20:48:09+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
@@ -818,16 +818,16 @@
         },
         {
             "name": "symfony/polyfill-php83",
-            "version": "v1.33.0",
+            "version": "v1.34.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php83.git",
-                "reference": "17f6f9a6b1735c0f163024d959f700cfbc5155e5"
+                "reference": "3600c2cb22399e25bb226e4a135ce91eeb2a6149"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-php83/zipball/17f6f9a6b1735c0f163024d959f700cfbc5155e5",
-                "reference": "17f6f9a6b1735c0f163024d959f700cfbc5155e5",
+                "url": "https://api.github.com/repos/symfony/polyfill-php83/zipball/3600c2cb22399e25bb226e4a135ce91eeb2a6149",
+                "reference": "3600c2cb22399e25bb226e4a135ce91eeb2a6149",
                 "shasum": ""
             },
             "require": {
@@ -874,7 +874,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php83/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-php83/tree/v1.34.0"
             },
             "funding": [
                 {
@@ -894,7 +894,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-07-08T02:45:35+00:00"
+            "time": "2026-04-10T17:25:58+00:00"
         },
         {
             "name": "symfony/service-contracts",
