@@ -40,9 +40,11 @@ class QuestionGeneration {
                 this.hideMessage();
 
                 const fileID = parseInt(document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONFILESELECT).value);
-                const numberQuestions = parseInt(document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONNUMBERINPUT).value);
+                const numberMCQs = parseInt(document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONNUMBERMCQINPUT).value);
+                const numberEssays = parseInt(document.querySelector(Selectors.ELEMENTS.QUESTIONGENERATIONNUMBERESSAYINPUT).value);
 
-                if (isNaN(numberQuestions) || numberQuestions <= 0) {
+                if (isNaN(numberMCQs) || numberMCQs < 0 || isNaN(numberEssays) || numberEssays < 0
+                                      || (numberMCQs == 0 && numberEssays == 0)) {
                     this.showMessage("Enter a positive number of questions!", true);
                     return;
                 }
@@ -57,7 +59,8 @@ class QuestionGeneration {
                         contextID: this.contextID,
                         courseID: this.courseID,
                         fileID: fileID,
-                        numberQuestions: numberQuestions,
+                        numberMCQs: numberMCQs,
+                        numberEssays: numberEssays
                     }
                 };
 

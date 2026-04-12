@@ -172,7 +172,7 @@ function qbank_genai_get_resource_names_string($resources) {
  * @param stdClass $question The MCQ data
  * @param stdClass $category Information about the category and context
  */
-function qbank_genai_create_question(string $name, stdClass $question, stdClass $category) {
+function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $category) {
     global $USER, $DB;
 
     $transaction = $DB->start_delegated_transaction();
@@ -229,7 +229,7 @@ function qbank_genai_create_question(string $name, stdClass $question, stdClass 
         $answer->id = $DB->insert_record('question_answers', $answer);
     }
 
-    // Question a record for the question's options.
+    // Create a record for the question's options.
     $options = new stdClass();
     $options->questionid = $qdata->id;
     $options->correctfeedback = '';
@@ -255,42 +255,42 @@ function qbank_genai_create_question(string $name, stdClass $question, stdClass 
 }
 
 /**
- * Programmatically creates a Description question.
+ * Programmatically creates an Essay question.
  *
- * Based on code from /question/type/description/
+ * Based on code from /question/type/essay/
  *
  * @param string $name The question name
- * @param string $text The question text
+ * @param string $questiontext The question text shown to students
+ * @param float $maxpoints The maximum grade for the question
+ * @param string $graderinfo Grading information
  * @param stdClass $category Information about the category and context
  */
-function qbank_genai_add_description(string $name, string $text, stdClass $category) {
+function qbank_genai_create_essay(string $name, string $questiontext, float $maxpoints, string $graderinfo, stdClass $category) {
     global $USER, $DB;
 
     $transaction = $DB->start_delegated_transaction();
 
     $qdata = new stdClass();
+
     $qdata->category = $category->id;
-    $qdata->qtype = 'description';
+    $qdata->qtype = 'essay';
     $qdata->name = $name;
-    $qdata->questiontext = $text;
-    $qdata->questiontextformat = FORMAT_HTML;
     $qdata->parent = 0;
-    $qdata->defaultmark = 0;
-    $qdata->length = 0;
+    $qdata->length = 1;
+    $qdata->defaultmark = $maxpoints;
     $qdata->penalty = 0;
+    $qdata->questiontext = $questiontext;
+    $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-    $qdata->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
-    $qdata->timecreated = time();
-    $qdata->timemodified = time();
+
+    $qdata->stamp = make_unique_id_code();
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
-    $qdata->stamp = make_unique_id_code();
+    $t = time();
+    $qdata->timecreated = $t;
+    $qdata->timemodified = $t;
     $qdata->idnumber = null;
-    $qdata->contextid = 0;
-    $qdata->hints = [];
-    $qdata->options = new stdClass();
-    $qdata->options->answers = [];
 
     // Create a record for the question.
     $qdata->id = $DB->insert_record('question', $qdata);
@@ -309,6 +309,24 @@ function qbank_genai_add_description(string $name, string $text, stdClass $categ
     $questionversion->version = get_next_version($questionbankentry->id);
     $questionversion->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
     $questionversion->id = $DB->insert_record('question_versions', $questionversion);
+
+    // Create a record for the essay options.
+    $options = new stdClass();
+    $options->questionid = $qdata->id;
+    $options->responseformat = 'editor';
+    $options->responserequired = 1;
+    $options->responsefieldlines = 10;
+    $options->minwordlimit = null;
+    $options->maxwordlimit = null;
+    $options->attachments = 0;
+    $options->attachmentsrequired = 0;
+    $options->graderinfo = $graderinfo;
+    $options->graderinfoformat = FORMAT_HTML;
+    $options->responsetemplate = '';
+    $options->responsetemplateformat = FORMAT_HTML;
+    $options->maxbytes = 0;
+    $options->filetypeslist = null;
+    $options->id = $DB->insert_record('qtype_essay_options', $options);
 
     // Log the creation of this question.
     $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);

@@ -42,7 +42,8 @@ class generate_questions extends external_api {
             'contextID' => new external_value(PARAM_INT, 'Context ID'),
             'courseID' => new external_value(PARAM_INT, 'Course ID'),
             'fileID' => new external_value(PARAM_INT, 'File ID'),
-            'numberQuestions' => new external_value(PARAM_INT, 'Number of questions'),
+            'numberMCQs' => new external_value(PARAM_INT, 'Number of MCQs'),
+            'numberEssays' => new external_value(PARAM_INT, 'Number of essays'),
         ]);
     }
 
@@ -63,13 +64,15 @@ class generate_questions extends external_api {
      * @param int $contextid The ID of the context
      * @param int $courseid The ID of the course
      * @param int $fileid The ID of the file
-     * @param int $numberquestions Number of questions to be generated
+     * @param int $numbermcqs Number of multiple choice questions to be generated
+     * @param int $numberessays Number of essay questions to be generated
      * @return string The result
      */
-    public static function execute($contextid, $courseid, $fileid, $numberquestions) {
+    public static function execute($contextid, $courseid, $fileid, $numbermcqs, $numberessays) {
         $params = self::validate_parameters(
             self::execute_parameters(),
-            ['contextID' => $contextid, 'courseID' => $courseid, 'fileID' => $fileid, 'numberQuestions' => $numberquestions]
+            ['contextID' => $contextid, 'courseID' => $courseid, 'fileID' => $fileid,
+                'numberMCQs' => $numbermcqs, 'numberEssays' => $numberessays]
         );
 
         $context = \context_course::instance($courseid);
@@ -106,11 +109,16 @@ class generate_questions extends external_api {
         unlink($copypath);
 
         $systemprompt = "You are a quiz generator. You will be provided a file about which you should create ";
-        $systemprompt .= "an indicated number of multiple choice questions, in the same language as its content. ";
-        $systemprompt .= "Each question shall have between 3 and 5 answers and only 1 correct answer. Make sure all distractors ";
-        $systemprompt .= "are plausible and that the correct answer is not much longer than any distractor.";
+        $systemprompt .= "an indicated number of multiple choice questions (MCQ) respectively essay questions, ";
+        $systemprompt .= "in the same language as its content. Each multiple choice question shall have between ";
+        $systemprompt .= "3 and 5 answers and only 1 correct answer. Make sure all distractors are plausible and ";
+        $systemprompt .= "that the correct answer is not much longer than any distractor. For essay questions, ";
+        $systemprompt .= "also indicate grading information (a rubric with grading criteria and points assigned ";
+        $systemprompt .= "to each criterion, each on a separate line) that can be used for automatic grading, ";
+        $systemprompt .= "as well as the maximum number of points.";
 
-        $userprompt = 'Create ' . $numberquestions . ' multiple choice questions on the content of the provided file.';
+        $userprompt = 'Create ' . $numbermcqs . ' multiple choice questions and ' . $numberessays;
+        $userprompt .= ' essay questions on the content of the provided file.';
 
         // Call OpenAI to generate questions.
         $response = $client->responses()->create([
@@ -142,7 +150,7 @@ class generate_questions extends external_api {
                     'schema' => [
                         'type' => 'object',
                         'properties' => [
-                            'questions' => [
+                            'mcq' => [
                                 'type' => 'array',
                                 'items' => [
                                     'type' => 'object',
@@ -171,8 +179,27 @@ class generate_questions extends external_api {
                                     'additionalProperties' => false,
                                 ],
                             ],
+                            'essay' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'stem' => [
+                                            'type' => 'string',
+                                        ],
+                                        'maxpoints' => [
+                                            'type' => 'number',
+                                        ],
+                                        'graderinfo' => [
+                                            'type' => 'string',
+                                        ],
+                                    ],
+                                    'required' => ['stem', 'maxpoints', 'graderinfo'],
+                                    'additionalProperties' => false,
+                                ],
+                            ],
                         ],
-                        'required' => ['questions'],
+                        'required' => ['mcq', 'essay'],
                         'additionalProperties' => false,
                     ],
                 ],
@@ -185,18 +212,21 @@ class generate_questions extends external_api {
 
         // Parse the response to get the tags.
         try {
-            $questiondata = json_decode($response->outputText)->questions;
+            $questiondata = json_decode($response->outputText);
         } catch (\Exception $e) {
             throw new \Exception(get_string('questiongenerationparsingerror', 'qbank_genai'));
         }
 
-        if (count($questiondata) > 0) {
+        $multiplechoicequestions = $questiondata->mcq;
+        $essayquestions = $questiondata->essay;
+
+        if (count($multiplechoicequestions) + count($essayquestions) > 0) {
             // Create question bank category and questions.
             $category = qbank_genai_create_question_category($contextid, get_coursemodule_from_id("resource", $fileid)->name);
 
             $i = 0;
 
-            foreach ($questiondata as $data) {
+            foreach ($multiplechoicequestions as $data) {
                 $question = new \stdClass();
                 $question->stem = $data->stem;
                 $question->answers = [];
@@ -207,13 +237,18 @@ class generate_questions extends external_api {
 
                 $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
 
-                qbank_genai_create_question($questionname, $question, $category);
+                qbank_genai_create_mcq($questionname, $question, $category);
+            }
+
+            foreach ($essayquestions as $data) {
+                $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
+                qbank_genai_create_essay($questionname, $data->stem, $data->maxpoints, nl2br($data->graderinfo), $category);
             }
 
             return get_string(
                 'questiongenerationsuccess',
                 'qbank_genai',
-                ['number' => count($questiondata), 'category' => $category->name]
+                ['number' => count($multiplechoicequestions) + count($essayquestions), 'category' => $category->name]
             );
         } else {
             throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
