@@ -26,7 +26,8 @@ export default {
         AUTOTAGBUTTON: '#id_autotagbutton',
         AUTOTAGRESULT: '#id_autotagresult',
         QUESTIONGENERATIONFILESELECT: '#id_file',
-        QUESTIONGENERATIONNUMBERINPUT: '#id_numberquestions',
+        QUESTIONGENERATIONNUMBERMCQINPUT: '#id_numbermcqs',
+        QUESTIONGENERATIONNUMBERESSAYINPUT: '#id_numberessays',
         QUESTIONGENERATIONBUTTON: '#id_questiongenerationbutton',
         QUESTIONGENERATIONRESULT: '#id_questiongenerationresult'
     }

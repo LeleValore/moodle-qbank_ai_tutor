@@ -34,7 +34,8 @@ $string['noopenaiapikey'] = 'You need to set an OpenAI API key.';
 $string['noquestionselected'] = 'No question selected.';
 $string['noquestionsgenerated'] = 'Issue during question generation. No questions were generated.';
 $string['noresources'] = 'There are no resources in your course.';
-$string['numberquestions'] = 'Number of questions';
+$string['numberessays'] = 'Number of essay questions';
+$string['numbermcqs'] = 'Number of multiple choice questions';
 
 $string['openaiapikey'] = 'OpenAI API key';
 $string['openaiapikey_help'] = 'To be created at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>.';
