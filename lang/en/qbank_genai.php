@@ -31,6 +31,7 @@ $string['autotagparsingerror'] = 'Error while parsing the generated tags.';
 $string['autotagsuccess'] = '{$a} questions have been tagged successfully.';
 
 $string['noopenaiapikey'] = 'You need to set an OpenAI API key.';
+$string['nobedrockconfig'] = 'Bedrock is not configured. Set Bedrock region and model ID in plugin settings or via environment variables.';
 $string['noquestionselected'] = 'No question selected.';
 $string['noquestionsgenerated'] = 'Issue during question generation. No questions were generated.';
 $string['noresources'] = 'There are no resources in your course.';
