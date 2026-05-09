@@ -1,0 +1,4 @@
+{
+    "redacted": true,
+    "note": "This file previously contained detailed diagnostic outputs with embedded AWS credentials and signatures. Sensitive values have been removed to avoid committing secrets. To regenerate diagnostics, run the local tests (tests/bedrock_test.php) with your AWS credentials set in environment variables. Do NOT commit credentials to this repository."
+}

@@ -77,7 +77,12 @@ class tag_questions extends external_api {
             $bedrockcfg['knowledge_base_id'] ?? '',
             $bedrockcfg['modelid'],
             $bedrockcfg['data_source_id'] ?? '',
+<<<<<<< HEAD
             $bedrockcfg['s3_bucket'] ?? ''
+=======
+            $bedrockcfg['s3_bucket'] ?? '',
+            $bedrockcfg['inference_profile_arn'] ?? ''
+>>>>>>> 0d2a43cabdd967796a1d7d1876051a71483f9f32
         );
 
         foreach ($questionlist as $qid) {

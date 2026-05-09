@@ -35,5 +35,69 @@ if ($hassiteconfig) {
             get_string('openaiapikey_help', 'qbank_genai'),
             '',
         ));
+<<<<<<< HEAD
+=======
+
+        // Bedrock settings.
+        $settings->add(new admin_setting_heading('qbank_genai/bedrockheading',
+            get_string('bedrocksettings', 'qbank_genai'),
+            get_string('bedrocksettings_help', 'qbank_genai')));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_region',
+            get_string('bedrock_region', 'qbank_genai'),
+            get_string('bedrock_region_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_modelid',
+            get_string('bedrock_modelid', 'qbank_genai'),
+            get_string('bedrock_modelid_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_inference_profile_arn',
+            get_string('bedrock_inference_profile_arn', 'qbank_genai'),
+            get_string('bedrock_inference_profile_arn_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_access_key',
+            get_string('bedrock_access_key', 'qbank_genai'),
+            get_string('bedrock_access_key_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configpasswordunmask(
+            'qbank_genai/bedrock_secret_key',
+            get_string('bedrock_secret_key', 'qbank_genai'),
+            get_string('bedrock_secret_key_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_knowledge_base_id',
+            get_string('bedrock_knowledge_base_id', 'qbank_genai'),
+            get_string('bedrock_knowledge_base_id_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_data_source_id',
+            get_string('bedrock_data_source_id', 'qbank_genai'),
+            get_string('bedrock_data_source_id_help', 'qbank_genai'),
+            ''
+        ));
+
+        $settings->add(new admin_setting_configtext(
+            'qbank_genai/bedrock_s3_bucket',
+            get_string('bedrock_s3_bucket', 'qbank_genai'),
+            get_string('bedrock_s3_bucket_help', 'qbank_genai'),
+            ''
+        ));
+>>>>>>> 0d2a43cabdd967796a1d7d1876051a71483f9f32
     }
 }
