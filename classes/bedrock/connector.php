@@ -24,8 +24,17 @@ class connector {
     private string $knowledge_base_id;
     private string $chat_model_id;
     private string $data_source_id;
+    private string $inference_profile_arn;
     private string $s3_bucket;
     private ?string $last_error = null;
+    private ?int $last_http_code = null;
+    private ?array $last_response_headers = null;
+    private ?string $last_response_body = null;
+    private ?string $last_request_method = null;
+    private ?string $last_request_url = null;
+    private ?array $last_request_headers = null;
+    private ?string $last_request_body = null;
+    private ?Request $last_signed_request = null;
 
     public function __construct(
         string $region,
@@ -34,17 +43,18 @@ class connector {
         string $knowledge_base_id = '',
         string $chat_model_id = '',
         string $data_source_id = '',
-        string $s3_bucket = ''
+        string $s3_bucket = '',
+        string $inference_profile_arn = ''
     ) {
-        $this->region = trim($region);
-        $this->access_key = trim($access_key);
-        $this->secret_key = trim($secret_key);
-        $this->knowledge_base_id = trim($knowledge_base_id);
-        $this->chat_model_id = trim($chat_model_id);
-        $this->data_source_id = trim($data_source_id);
-        $this->s3_bucket = trim($s3_bucket);
+        $this->region = $region;
+        $this->access_key = $access_key;
+        $this->secret_key = $secret_key;
+        $this->knowledge_base_id = $knowledge_base_id;
+        $this->chat_model_id = $chat_model_id;
+        $this->data_source_id = $data_source_id;
+        $this->s3_bucket = $s3_bucket;
+        $this->inference_profile_arn = $inference_profile_arn;
     }
-
     /**
      * Direct converse call to Bedrock Runtime.
      * Returns textual response or null on error.
@@ -66,7 +76,8 @@ class connector {
             ],
         ];
 
-        $path = '/model/' . rawurlencode($this->chat_model_id) . '/converse';
+        $identifier = !empty($this->inference_profile_arn) ? $this->inference_profile_arn : $this->chat_model_id;
+        $path = '/model/' . rawurlencode($identifier) . '/converse';
         $host = 'bedrock-runtime.' . $this->region . '.amazonaws.com';
 
         $result = $this->signed_json_request('bedrock', $host, $path, $payload, 'POST');
@@ -178,40 +189,142 @@ class connector {
         }
 
         $url = 'https://' . $host . $path;
-        $request = new Request($method, $url, ['Content-Type' => 'application/json', 'Accept' => 'application/json'], $body);
+        $headers = ['Content-Type' => 'application/json', 'Accept' => 'application/json'];
+        if (!empty($this->inference_profile_arn)) {
+            $headers['x-amzn-inference-profile-arn'] = $this->inference_profile_arn;
+        }
+        $request = new Request($method, $url, $headers, $body);
 
         $signed = $this->sign_request($request, $service);
         if ($signed === null) {
             return null;
         }
 
+        // Save signed request info for diagnostics and curl reproduction.
+        $this->last_signed_request = $signed;
+        $this->last_request_method = $signed->getMethod();
+        $this->last_request_url = (string)$signed->getUri();
+        $this->last_request_headers = $signed->getHeaders();
+        $this->last_request_body = (string)$signed->getBody();
+
         try {
             $client = new Client(['timeout' => 60]);
             $response = $client->send($signed);
-            $httpcode = $response->getStatusCode();
-            $respbody = (string)$response->getBody();
+            $this->last_http_code = $response->getStatusCode();
+            $this->last_response_headers = $response->getHeaders();
+            $this->last_response_body = (string)$response->getBody();
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            // Try to extract response body for better diagnostics.
+            $resp = $e->getResponse();
+            if ($resp) {
+                $this->last_http_code = $resp->getStatusCode();
+                $this->last_response_headers = $resp->getHeaders();
+                $this->last_response_body = (string)$resp->getBody();
+                $this->last_error = 'HTTP error ' . $this->last_http_code . ': ' . $this->last_response_body;
+            } else {
+                $this->last_error = 'HTTP request error: ' . $e->getMessage();
+            }
+            return null;
         } catch (\Exception $e) {
             $this->last_error = 'HTTP request error: ' . $e->getMessage();
             return null;
         }
 
-        if ($httpcode < 200 || $httpcode >= 300) {
-            $this->last_error = 'HTTP error ' . $httpcode . ': ' . $respbody;
+        if ($this->last_http_code < 200 || $this->last_http_code >= 300) {
+            $this->last_error = 'HTTP error ' . $this->last_http_code . ': ' . $this->last_response_body;
             return null;
         }
 
-        if ($respbody === '') {
+        if ($this->last_response_body === '') {
             $this->last_error = 'Empty response body from ' . $path;
             return null;
         }
 
-        $decoded = json_decode($respbody, true);
+        $decoded = json_decode($this->last_response_body, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->last_error = 'json_decode error: ' . json_last_error_msg();
             return null;
         }
 
         return $decoded;
+    }
+
+    /**
+     * Convert a PSR-7 Request to a curl command for reproduction.
+     */
+    private function request_to_curl(Request $request): string {
+        $method = $request->getMethod();
+        $uri = (string)$request->getUri();
+        $headers = $request->getHeaders();
+        $body = (string)$request->getBody();
+
+        // Safely escape single quotes in body for shell single-quoted string.
+        $body_escaped = str_replace("'", "'\"'\"'", $body);
+
+        $cmd = "curl -i -X " . escapeshellarg($method) . " ";
+        foreach ($headers as $k => $vals) {
+            foreach ($vals as $v) {
+                $cmd .= "-H '" . str_replace("'", "'\\''", $k . ': ' . $v) . "' ";
+            }
+        }
+        if ($body !== '') {
+            $cmd .= "--data-binary '" . $body_escaped . "' ";
+        }
+        $cmd .= "'" . str_replace("'", "'\\''", $uri) . "'";
+        return $cmd;
+    }
+
+    /**
+     * Return structured diagnostics for the last request/response.
+     */
+    public function get_last_diagnostics(): array {
+        $mask_header = function($k, $v) {
+            $lk = strtolower($k);
+            if ($lk === 'authorization' || strpos($lk, 'x-amz-') === 0 || strpos($lk, 'x-amzn-') === 0) {
+                return substr($v, 0, 16) . '...';
+            }
+            return $v;
+        };
+
+        $masked_request_headers = [];
+        if (!empty($this->last_request_headers)) {
+            foreach ($this->last_request_headers as $k => $vals) {
+                $masked_vals = [];
+                foreach ($vals as $v) {
+                    $masked_vals[] = $mask_header($k, $v);
+                }
+                $masked_request_headers[$k] = $masked_vals;
+            }
+        }
+
+        $masked_response_headers = [];
+        if (!empty($this->last_response_headers)) {
+            foreach ($this->last_response_headers as $k => $vals) {
+                $masked_vals = [];
+                foreach ($vals as $v) {
+                    $masked_vals[] = $mask_header($k, $v);
+                }
+                $masked_response_headers[$k] = $masked_vals;
+            }
+        }
+
+        $curl = $this->last_signed_request ? $this->request_to_curl($this->last_signed_request) : null;
+
+        return [
+            'error' => $this->last_error,
+            'request' => [
+                'method' => $this->last_request_method,
+                'url' => $this->last_request_url,
+                'headers_masked' => $masked_request_headers,
+                'body_snippet' => $this->last_request_body !== null ? substr($this->last_request_body, 0, 2000) : null,
+            ],
+            'response' => [
+                'status' => $this->last_http_code,
+                'headers_masked' => $masked_response_headers,
+                'body_snippet' => $this->last_response_body !== null ? substr($this->last_response_body, 0, 8000) : null,
+            ],
+            'curl' => $curl,
+        ];
     }
 
     /**
@@ -232,6 +345,43 @@ class connector {
             $this->last_error = 'Signing error: ' . $e->getMessage();
             return null;
         }
+    }
+
+    /**
+     * Probe a model by trying common endpoints (/converse and /invoke).
+     * Returns an associative array with path => ['ok'=>bool, 'response'| 'error']
+     */
+    public function probe_model(string $modelid, string $prompt): array {
+        $results = [];
+        $host = 'bedrock-runtime.' . $this->region . '.amazonaws.com';
+
+        $probeIdentifier = !empty($this->inference_profile_arn) ? $this->inference_profile_arn : $modelid;
+
+        $paths = [
+            '/model/' . rawurlencode($probeIdentifier) . '/converse' => [
+                'payload' => [
+                    'system' => [[ 'text' => 'Probe' ]],
+                    'messages' => [[ 'role' => 'user', 'content' => [[ 'text' => $prompt ]] ]],
+                    'inferenceConfig' => [ 'maxTokens' => 64, 'temperature' => 0.3 ],
+                ],
+                'method' => 'POST',
+            ],
+            '/model/' . rawurlencode($probeIdentifier) . '/invoke' => [
+                'payload' => [ 'input' => $prompt ],
+                'method' => 'POST',
+            ],
+        ];
+
+        foreach ($paths as $path => $info) {
+            $res = $this->signed_json_request('bedrock', $host, $path, $info['payload'], $info['method']);
+            if ($res === null) {
+                $results[$path] = ['ok' => false, 'error' => $this->last_error];
+            } else {
+                $results[$path] = ['ok' => true, 'response' => $res];
+            }
+        }
+
+        return $results;
     }
 
     /**

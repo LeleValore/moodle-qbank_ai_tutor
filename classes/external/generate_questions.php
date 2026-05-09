@@ -116,7 +116,8 @@ class generate_questions extends external_api {
             $bedrockcfg['knowledge_base_id'] ?? '',
             $bedrockcfg['modelid'],
             $bedrockcfg['data_source_id'] ?? '',
-            $bedrockcfg['s3_bucket'] ?? ''
+            $bedrockcfg['s3_bucket'] ?? '',
+            $bedrockcfg['inference_profile_arn'] ?? ''
         );
 
         $prompt = $systemprompt . "\n\n" . $filetext . "\n\n" . $userprompt;

@@ -352,6 +352,7 @@ function qbank_genai_get_bedrock_config(): array {
     $knowledgebase = get_config('qbank_genai', 'bedrock_knowledge_base_id') ?: getenv('BEDROCK_KNOWLEDGE_BASE_ID');
     $datasource = get_config('qbank_genai', 'bedrock_data_source_id') ?: getenv('BEDROCK_DATA_SOURCE_ID');
     $s3bucket = get_config('qbank_genai', 'bedrock_s3_bucket') ?: getenv('BEDROCK_S3_BUCKET');
+    $inferenceprofile = get_config('qbank_genai', 'bedrock_inference_profile_arn') ?: getenv('BEDROCK_INFERENCE_PROFILE_ARN');
 
     $enabled = !empty($region) && !empty($modelid);
 
@@ -365,6 +366,7 @@ function qbank_genai_get_bedrock_config(): array {
         'knowledge_base_id' => $knowledgebase,
         'data_source_id' => $datasource,
         's3_bucket' => $s3bucket,
+        'inference_profile_arn' => $inferenceprofile,
     ];
 }
 
