@@ -79,35 +79,24 @@ class generate_questions extends external_api {
         self::validate_context($context);
         require_all_capabilities(qbank_genai_required_capabilities(), $context, null, false);
 
-        // Get OpenAI API key from plugin settings.
-        $openaiapikey = qbank_genai_get_openai_apikey($courseid);
-        if (empty($openaiapikey)) {
-            throw new \Exception(get_string('noopenaiapikey', 'qbank_genai'));
+        // Require Bedrock configuration (no OpenAI fallback).
+        $bedrockcfg = qbank_genai_get_bedrock_config();
+        if (empty($bedrockcfg['enabled'])) {
+            throw new \Exception(get_string('nobedrockconfig', 'qbank_genai'));
         }
 
-        // Initialize OpenAI client.
-        $client = \OpenAI::factory()
-            ->withApiKey($openaiapikey)
-            ->withHttpClient(new \GuzzleHttp\Client(['timeout' => 600]))
-            ->make();
-
-        // Get file.
+        // Get file info and extract text.
         $fileinfo = qbank_genai_get_fileinfo_for_resource($fileid);
+        if (!$fileinfo) {
+            throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
+        }
 
-        // Upload files: Copy necessary as Moodle renames files upon upload and OpenAI requires
-        // a file extension (and symbolic link would still take original name).
-        $tempfolder = make_temp_directory('qbank_genai');
-        $copypath = $tempfolder . "/" . basename($fileinfo->path) . "." . $fileinfo->extension;
-        $fileinfo->file->copy_content_to($copypath);
+        $filetext = qbank_genai_extract_text_from_file($fileinfo, 15000);
+        if (empty($filetext)) {
+            throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
+        }
 
-        $response = $client->files()->upload([
-            'purpose' => 'user_data',
-            'file' => fopen($copypath, 'r'),
-        ]);
-        $uploadedfileid = $response->id;
-
-        unlink($copypath);
-
+        // Build prompts.
         $systemprompt = "You are a quiz generator. You will be provided a file about which you should create ";
         $systemprompt .= "an indicated number of multiple choice questions (MCQ) respectively essay questions, ";
         $systemprompt .= "in the same language as its content. Each multiple choice question shall have between ";
@@ -120,105 +109,27 @@ class generate_questions extends external_api {
         $userprompt = 'Create ' . $numbermcqs . ' multiple choice questions and ' . $numberessays;
         $userprompt .= ' essay questions on the content of the provided file.';
 
-        // Call OpenAI to generate questions.
-        $response = $client->responses()->create([
-            'model' => 'gpt-5.4',
-            'input' => [
-                [
-                    'role' => 'system',
-                    'content' => $systemprompt,
-                ],
-                [
-                    'role' => 'user',
-                    'content' => [
-                        [
-                            'type' => 'input_file',
-                            'file_id' => $uploadedfileid,
-                        ],
-                        [
-                            'type' => 'input_text',
-                            'text' => $userprompt,
-                        ],
-                    ],
-                ],
-            ],
-            'text' => [
-                "format" => [
-                    'type' => 'json_schema',
-                    'name' => 'question_response',
-                    'strict' => true,
-                    'schema' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'mcq' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'stem' => [
-                                            'type' => 'string',
-                                        ],
-                                        'answers' => [
-                                            'type' => 'array',
-                                            'items' => [
-                                                'type' => 'object',
-                                                'properties' => [
-                                                    'text' => [
-                                                        'type' => 'string',
-                                                    ],
-                                                    'correct' => [
-                                                        'type' => 'boolean',
-                                                    ],
-                                                ],
-                                                'required' => ['text', 'correct'],
-                                                'additionalProperties' => false,
-                                            ],
-                                        ],
-                                    ],
-                                    'required' => ['stem', 'answers'],
-                                    'additionalProperties' => false,
-                                ],
-                            ],
-                            'essay' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'stem' => [
-                                            'type' => 'string',
-                                        ],
-                                        'maxpoints' => [
-                                            'type' => 'number',
-                                        ],
-                                        'graderinfo' => [
-                                            'type' => 'string',
-                                        ],
-                                    ],
-                                    'required' => ['stem', 'maxpoints', 'graderinfo'],
-                                    'additionalProperties' => false,
-                                ],
-                            ],
-                        ],
-                        'required' => ['mcq', 'essay'],
-                        'additionalProperties' => false,
-                    ],
-                ],
-            ],
-        ]);
+        $connector = new \qbank_genai\bedrock\connector(
+            $bedrockcfg['region'],
+            $bedrockcfg['access_key'],
+            $bedrockcfg['secret_key'],
+            $bedrockcfg['knowledge_base_id'] ?? '',
+            $bedrockcfg['modelid'],
+            $bedrockcfg['data_source_id'] ?? '',
+            $bedrockcfg['s3_bucket'] ?? ''
+        );
 
-        $client->files()->delete($uploadedfileid);
+        $prompt = $systemprompt . "\n\n" . $filetext . "\n\n" . $userprompt;
 
-        $questiondata = [];
+        $raw = $connector->direct_generate($filetext, $prompt);
 
-        // Parse the response to get the tags.
-        try {
-            $questiondata = json_decode($response->outputText);
-        } catch (\Exception $e) {
+        $questiondata = qbank_genai_extract_json_from_text($raw);
+        if ($questiondata === null) {
             throw new \Exception(get_string('questiongenerationparsingerror', 'qbank_genai'));
         }
 
-        $multiplechoicequestions = $questiondata->mcq;
-        $essayquestions = $questiondata->essay;
+        $multiplechoicequestions = $questiondata->mcq ?? [];
+        $essayquestions = $questiondata->essay ?? [];
 
         if (count($multiplechoicequestions) + count($essayquestions) > 0) {
             // Create question bank category and questions.

@@ -64,15 +64,21 @@ class tag_questions extends external_api {
 
         $numbersuccessfullytagged = 0;
 
-        // Get OpenAI API key from plugin settings.
-        $openaiapikey = get_config('qbank_genai', 'openaiapikey');
-
-        if (empty($openaiapikey)) {
-            throw new \Exception(get_string('noopenaiapikey', 'qbank_genai'));
+        // Require Bedrock configuration (no OpenAI fallback).
+        $bedrockcfg = qbank_genai_get_bedrock_config();
+        if (empty($bedrockcfg['enabled'])) {
+            throw new \Exception(get_string('nobedrockconfig', 'qbank_genai'));
         }
 
-        // Initialize OpenAI client.
-        $client = \OpenAI::client($openaiapikey);
+        $connector = new \qbank_genai\bedrock\connector(
+            $bedrockcfg['region'],
+            $bedrockcfg['access_key'],
+            $bedrockcfg['secret_key'],
+            $bedrockcfg['knowledge_base_id'] ?? '',
+            $bedrockcfg['modelid'],
+            $bedrockcfg['data_source_id'] ?? '',
+            $bedrockcfg['s3_bucket'] ?? ''
+        );
 
         foreach ($questionlist as $qid) {
             $question = \question_bank::load_question($qid);
@@ -94,50 +100,16 @@ class tag_questions extends external_api {
                 $questiontext .= '\n- ' . strip_tags($a->answer);
             }
 
-            // Call OpenAI to get tags.
-            $response = $client->responses()->create([
-                'model' => 'gpt-5.4',
-                'input' => [
-                    [
-                        'role' => 'system',
-                        'content' => 'You are a tagging assistant. Your task is to extract a list of the most
-                                        important tags for the given content. All tags shall be given in English.',
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => $questiontext,
-                    ],
-                ],
-                'text' => [
-                    "format" => [
-                        'type' => 'json_schema',
-                        'name' => 'tag_response',
-                        'strict' => true,
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'tags' => [
-                                    'type' => 'array',
-                                    'items' => [
-                                        'type' => 'string',
-                                    ],
-                                ],
-                            ],
-                            'required' => ['tags'],
-                            'additionalProperties' => false,
-                        ],
-                    ],
-                ],
-            ]);
+            // Call Bedrock to get tags and parse JSON-only response.
+            $system = 'You are a tagging assistant. Your task is to extract a list of the most important tags for the given content. All tags shall be given in English.';
+            $prompt = $system . "\n\n" . $questiontext . "\n\nReturn ONLY valid JSON with the shape: {\"tags\":[\"tag1\",\"tag2\"]}.";
 
-            $tags = [];
-
-            // Parse the response to get the tags.
-            try {
-                $tags = json_decode($response->output[0]->content[0]->text)->tags;
-            } catch (\Exception $e) {
+            $raw = $connector->direct_generate($questiontext, $prompt);
+            $parsed = qbank_genai_extract_json_from_text($raw);
+            if ($parsed === null || !isset($parsed->tags)) {
                 throw new \Exception(get_string('autotagparsingerror', 'qbank_genai'));
             }
+            $tags = $parsed->tags;
 
             \core_tag_tag::set_item_tags('core_question', 'question', $qid, \context::instance_by_id($question->contextid), $tags);
 

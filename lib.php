@@ -336,3 +336,105 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     // Commit the transaction.
     $transaction->allow_commit();
 }
+
+
+/**
+ * Read Bedrock configuration (from plugin config or environment variables).
+ *
+ * @return array
+ */
+function qbank_genai_get_bedrock_config(): array {
+    $region = get_config('qbank_genai', 'bedrock_region') ?: getenv('BEDROCK_REGION');
+    $modelid = get_config('qbank_genai', 'bedrock_modelid') ?: getenv('BEDROCK_MODELID');
+    $access = get_config('qbank_genai', 'bedrock_access_key') ?: getenv('AWS_ACCESS_KEY_ID');
+    $secret = get_config('qbank_genai', 'bedrock_secret') ?: getenv('AWS_SECRET_ACCESS_KEY');
+    $endpoint = get_config('qbank_genai', 'bedrock_endpoint') ?: getenv('BEDROCK_ENDPOINT');
+    $knowledgebase = get_config('qbank_genai', 'bedrock_knowledge_base_id') ?: getenv('BEDROCK_KNOWLEDGE_BASE_ID');
+    $datasource = get_config('qbank_genai', 'bedrock_data_source_id') ?: getenv('BEDROCK_DATA_SOURCE_ID');
+    $s3bucket = get_config('qbank_genai', 'bedrock_s3_bucket') ?: getenv('BEDROCK_S3_BUCKET');
+
+    $enabled = !empty($region) && !empty($modelid);
+
+    return [
+        'enabled' => $enabled,
+        'region' => $region,
+        'modelid' => $modelid,
+        'access_key' => $access,
+        'secret_key' => $secret,
+        'endpoint' => $endpoint,
+        'knowledge_base_id' => $knowledgebase,
+        'data_source_id' => $datasource,
+        's3_bucket' => $s3bucket,
+    ];
+}
+
+
+/**
+ * Extract text from a resource file. Basic support for text/html/md/csv and attempt for PDF.
+ * Returns trimmed text or empty string if not extractable.
+ *
+ * @param stdClass $fileinfo
+ * @param int $maxchars
+ * @return string
+ */
+function qbank_genai_extract_text_from_file($fileinfo, int $maxchars = 15000): string {
+    $tempfolder = make_temp_directory('qbank_genai');
+    $copypath = $tempfolder . '/' . basename($fileinfo->path) . '.' . $fileinfo->extension;
+    $fileinfo->file->copy_content_to($copypath);
+
+    $ext = strtolower($fileinfo->extension);
+    $text = '';
+
+    $textlike = ['txt', 'md', 'csv', 'htm', 'html'];
+    if (in_array($ext, $textlike)) {
+        $text = file_get_contents($copypath);
+    } else if ($ext === 'pdf') {
+        // Try pdftotext if available.
+        $pdftotext = trim(shell_exec('which pdftotext'));
+        if (!empty($pdftotext)) {
+            $out = shell_exec(escapeshellcmd($pdftotext) . ' ' . escapeshellarg($copypath) . ' -');
+            $text = $out ?: '';
+        } else {
+            $text = '';
+        }
+    } else {
+        // Unknown type — best effort: try to read as text.
+        $text = @file_get_contents($copypath) ?: '';
+    }
+
+    @unlink($copypath);
+
+    $text = trim(strip_tags($text));
+    if (mb_strlen($text) > $maxchars) {
+        $text = mb_substr($text, 0, $maxchars);
+    }
+
+    return $text;
+}
+
+
+/**
+ * Try to extract the first JSON object from arbitrary text.
+ *
+ * @param string $text
+ * @return mixed|null
+ */
+function qbank_genai_extract_json_from_text(string $text) {
+    $decoded = json_decode($text, false);
+    if ($decoded !== null) {
+        return $decoded;
+    }
+
+    // Fallback: find first { and last } and attempt decode.
+    $start = strpos($text, '{');
+    $end = strrpos($text, '}');
+    if ($start !== false && $end !== false && $end > $start) {
+        $substr = substr($text, $start, $end - $start + 1);
+        $decoded = json_decode($substr, false);
+        if ($decoded !== null) {
+            return $decoded;
+        }
+    }
+
+    return null;
+}
