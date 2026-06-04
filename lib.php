@@ -165,9 +165,6 @@ function qbank_genai_get_resource_names_string($resources) {
 /**
  * Programmatically create an MCQ question.
  *
- * Based on code from save_question() in /question/type/questiontypebase.php
- * and save_question_options() /question/type/multichoice/questiontype.php.
- *
  * @param string $name The question name
  * @param stdClass $question The MCQ data
  * @param stdClass $category Information about the category and context
@@ -178,19 +175,17 @@ function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $cate
     $transaction = $DB->start_delegated_transaction();
 
     $qdata = new stdClass();
-
     $qdata->category = $category->id;
     $qdata->qtype = 'multichoice';
     $qdata->name = $name;
     $qdata->parent = 0;
     $qdata->length = 1;
     $qdata->defaultmark = 1;
-    $qdata->penalty = 0;
-    $qdata->questiontext = $question->stem; // FIXME: Cleanse.
+    $qdata->penalty = 0.3333333;
+    $qdata->questiontext = $question->stem;
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-
     $qdata->stamp = make_unique_id_code();
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
@@ -199,17 +194,14 @@ function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $cate
     $qdata->timemodified = $t;
     $qdata->idnumber = null;
 
-    // Create a record for the question.
     $qdata->id = $DB->insert_record('question', $qdata);
 
-    // Create a record for the question bank entry.
     $questionbankentry = new stdClass();
     $questionbankentry->questioncategoryid = $category->id;
     $questionbankentry->idnumber = $qdata->idnumber;
     $questionbankentry->ownerid = $qdata->createdby;
     $questionbankentry->id = $DB->insert_record('question_bank_entries', $questionbankentry);
 
-    // Create a record for the question versions.
     $questionversion = new stdClass();
     $questionversion->questionbankentryid = $questionbankentry->id;
     $questionversion->questionid = $qdata->id;
@@ -217,11 +209,10 @@ function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $cate
     $questionversion->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
     $questionversion->id = $DB->insert_record('question_versions', $questionversion);
 
-    // Create answer records.
     foreach ($question->answers as $a) {
         $answer = new stdClass();
         $answer->question = $qdata->id;
-        $answer->answer = $a->text; // FIXME: Cleanse.
+        $answer->answer = $a->text;
         $answer->answerformat = FORMAT_HTML;
         $answer->feedback = '';
         $answer->feedbackformat = FORMAT_HTML;
@@ -229,7 +220,6 @@ function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $cate
         $answer->id = $DB->insert_record('question_answers', $answer);
     }
 
-    // Create a record for the question's options.
     $options = new stdClass();
     $options->questionid = $qdata->id;
     $options->correctfeedback = '';
@@ -245,19 +235,15 @@ function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $cate
     $options->shownumcorrect = 1;
     $options->id = $DB->insert_record('qtype_multichoice_options', $options);
 
-    // Log the creation of this question.
     $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);
     $event = \core\event\question_created::create_from_question_instance($qdata, $context);
     $event->trigger();
 
-    // Commit the transaction.
     $transaction->allow_commit();
 }
 
 /**
  * Programmatically creates an Essay question.
- *
- * Based on code from /question/type/essay/
  *
  * @param string $name The question name
  * @param string $questiontext The question text shown to students
@@ -271,7 +257,6 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     $transaction = $DB->start_delegated_transaction();
 
     $qdata = new stdClass();
-
     $qdata->category = $category->id;
     $qdata->qtype = 'essay';
     $qdata->name = $name;
@@ -283,7 +268,6 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-
     $qdata->stamp = make_unique_id_code();
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
@@ -292,17 +276,14 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     $qdata->timemodified = $t;
     $qdata->idnumber = null;
 
-    // Create a record for the question.
     $qdata->id = $DB->insert_record('question', $qdata);
 
-    // Create a record for the question bank entry.
     $questionbankentry = new stdClass();
     $questionbankentry->questioncategoryid = $category->id;
     $questionbankentry->idnumber = $qdata->idnumber;
     $questionbankentry->ownerid = $qdata->createdby;
     $questionbankentry->id = $DB->insert_record('question_bank_entries', $questionbankentry);
 
-    // Create a record for the question versions.
     $questionversion = new stdClass();
     $questionversion->questionbankentryid = $questionbankentry->id;
     $questionversion->questionid = $qdata->id;
@@ -310,7 +291,6 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     $questionversion->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
     $questionversion->id = $DB->insert_record('question_versions', $questionversion);
 
-    // Create a record for the essay options.
     $options = new stdClass();
     $options->questionid = $qdata->id;
     $options->responseformat = 'editor';
@@ -328,15 +308,236 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     $options->filetypeslist = null;
     $options->id = $DB->insert_record('qtype_essay_options', $options);
 
-    // Log the creation of this question.
     $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);
     $event = \core\event\question_created::create_from_question_instance($qdata, $context);
     $event->trigger();
 
-    // Commit the transaction.
     $transaction->allow_commit();
 }
 
+/**
+ * Programmatically create a Short Answer question (Risposta breve).
+ *
+ * @param string $name The question name
+ * @param stdClass $question The Short Answer data
+ * @param stdClass $category Information about the category and context
+ */
+function qbank_genai_create_shortanswer(string $name, stdClass $question, stdClass $category) {
+    global $USER, $DB;
+
+    $transaction = $DB->start_delegated_transaction();
+
+    $qdata = new stdClass();
+    $qdata->category = $category->id;
+    $qdata->qtype = 'shortanswer';
+    $qdata->name = $name;
+    $qdata->parent = 0;
+    $qdata->length = 1;
+    $qdata->defaultmark = 1;
+    $qdata->penalty = 0.3333333;
+    $qdata->questiontext = $question->stem;
+    $qdata->questiontextformat = FORMAT_HTML;
+    $qdata->generalfeedback = '';
+    $qdata->generalfeedbackformat = FORMAT_HTML;
+    $qdata->stamp = make_unique_id_code();
+    $qdata->createdby = $USER->id;
+    $qdata->modifiedby = $USER->id;
+    $t = time();
+    $qdata->timecreated = $t;
+    $qdata->timemodified = $t;
+    $qdata->idnumber = null;
+
+    $qdata->id = $DB->insert_record('question', $qdata);
+
+    $questionbankentry = new stdClass();
+    $questionbankentry->questioncategoryid = $category->id;
+    $questionbankentry->idnumber = $qdata->idnumber;
+    $questionbankentry->ownerid = $qdata->createdby;
+    $questionbankentry->id = $DB->insert_record('question_bank_entries', $questionbankentry);
+
+    $questionversion = new stdClass();
+    $questionversion->questionbankentryid = $questionbankentry->id;
+    $questionversion->questionid = $qdata->id;
+    $questionversion->version = get_next_version($questionbankentry->id);
+    $questionversion->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
+    $questionversion->id = $DB->insert_record('question_versions', $questionversion);
+
+    foreach ($question->answers as $a) {
+        $answer = new stdClass();
+        $answer->question = $qdata->id;
+        $answer->answer = $a->text;
+        $answer->answerformat = FORMAT_PLAIN;
+        $answer->feedback = '';
+        $answer->feedbackformat = FORMAT_HTML;
+        $answer->fraction = $a->weight;
+        $answer->id = $DB->insert_record('question_answers', $answer);
+    }
+
+    $options = new stdClass();
+    $options->questionid = $qdata->id;
+    $options->usecase = 0; // Case insensitive di default.
+    $options->id = $DB->insert_record('qtype_shortanswer_options', $options);
+
+    $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);
+    $event = \core\event\question_created::create_from_question_instance($qdata, $context);
+    $event->trigger();
+
+    $transaction->allow_commit();
+}
+
+/**
+ * Programmatically create a True/False question (Vero/Falso).
+ *
+ * @param string $name The question name
+ * @param stdClass $question The True/False data
+ * @param stdClass $category Information about the category and context
+ */
+function qbank_genai_create_truefalse(string $name, stdClass $question, stdClass $category) {
+    global $USER, $DB;
+
+    $transaction = $DB->start_delegated_transaction();
+
+    $qdata = new stdClass();
+    $qdata->category = $category->id;
+    $qdata->qtype = 'truefalse';
+    $qdata->name = $name;
+    $qdata->parent = 0;
+    $qdata->length = 1;
+    $qdata->defaultmark = 1;
+    $qdata->penalty = 1;
+    $qdata->questiontext = $question->stem;
+    $qdata->questiontextformat = FORMAT_HTML;
+    $qdata->generalfeedback = '';
+    $qdata->generalfeedbackformat = FORMAT_HTML;
+    $qdata->stamp = make_unique_id_code();
+    $qdata->createdby = $USER->id;
+    $qdata->modifiedby = $USER->id;
+    $t = time();
+    $qdata->timecreated = $t;
+    $qdata->timemodified = $t;
+    $qdata->idnumber = null;
+
+    $qdata->id = $DB->insert_record('question', $qdata);
+
+    $questionbankentry = new stdClass();
+    $questionbankentry->questioncategoryid = $category->id;
+    $questionbankentry->idnumber = $qdata->idnumber;
+    $questionbankentry->ownerid = $qdata->createdby;
+    $questionbankentry->id = $DB->insert_record('question_bank_entries', $questionbankentry);
+
+    $questionversion = new stdClass();
+    $questionversion->questionbankentryid = $questionbankentry->id;
+    $questionversion->questionid = $qdata->id;
+    $questionversion->version = get_next_version($questionbankentry->id);
+    $questionversion->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
+    $questionversion->id = $DB->insert_record('question_versions', $questionversion);
+
+    // Crea le due risposte canoniche (True e False).
+    $trueanswer = new stdClass();
+    $trueanswer->question = $qdata->id;
+    $trueanswer->answer = get_string('true', 'qtype_truefalse');
+    $trueanswer->answerformat = FORMAT_PLAIN;
+    $trueanswer->feedback = '';
+    $trueanswer->feedbackformat = FORMAT_HTML;
+    $trueanswer->fraction = $question->correctanswer ? 1.0 : 0.0;
+    $trueid = $DB->insert_record('question_answers', $trueanswer);
+
+    $falseanswer = new stdClass();
+    $falseanswer->question = $qdata->id;
+    $falseanswer->answer = get_string('false', 'qtype_truefalse');
+    $falseanswer->answerformat = FORMAT_PLAIN;
+    $falseanswer->feedback = '';
+    $falseanswer->feedbackformat = FORMAT_HTML;
+    $falseanswer->fraction = !$question->correctanswer ? 1.0 : 0.0;
+    $falseid = $DB->insert_record('question_answers', $falseanswer);
+
+    $options = new stdClass();
+    $options->questionid = $qdata->id;
+    $options->trueanswer = $trueid;
+    $options->falseanswer = $falseid;
+    $options->id = $DB->insert_record('qtype_truefalse_options', $options);
+
+    $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);
+    $event = \core\event\question_created::create_from_question_instance($qdata, $context);
+    $event->trigger();
+
+    $transaction->allow_commit();
+}
+
+/**
+ * Programmatically create a Matching question (Corrispondenze).
+ *
+ * @param string $name The question name
+ * @param stdClass $question The Matching data
+ * @param stdClass $category Information about the category and context
+ */
+function qbank_genai_create_match(string $name, stdClass $question, stdClass $category) {
+    global $USER, $DB;
+
+    $transaction = $DB->start_delegated_transaction();
+
+    $qdata = new stdClass();
+    $qdata->category = $category->id;
+    $qdata->qtype = 'match';
+    $qdata->name = $name;
+    $qdata->parent = 0;
+    $qdata->length = 1;
+    $qdata->defaultmark = 1;
+    $qdata->penalty = 0.3333333;
+    $qdata->questiontext = $question->stem;
+    $qdata->questiontextformat = FORMAT_HTML;
+    $qdata->generalfeedback = '';
+    $qdata->generalfeedbackformat = FORMAT_HTML;
+    $qdata->stamp = make_unique_id_code();
+    $qdata->createdby = $USER->id;
+    $qdata->modifiedby = $USER->id;
+    $t = time();
+    $qdata->timecreated = $t;
+    $qdata->timemodified = $t;
+    $qdata->idnumber = null;
+
+    $qdata->id = $DB->insert_record('question', $qdata);
+
+    $questionbankentry = new stdClass();
+    $questionbankentry->questioncategoryid = $category->id;
+    $questionbankentry->idnumber = $qdata->idnumber;
+    $questionbankentry->ownerid = $qdata->createdby;
+    $questionbankentry->id = $DB->insert_record('question_bank_entries', $questionbankentry);
+
+    $questionversion = new stdClass();
+    $questionversion->questionbankentryid = $questionbankentry->id;
+    $questionversion->questionid = $qdata->id;
+    $questionversion->version = get_next_version($questionbankentry->id);
+    $questionversion->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
+    $questionversion->id = $DB->insert_record('question_versions', $questionversion);
+
+    foreach ($question->pairs as $pair) {
+        $subq = new stdClass();
+        $subq->questionid = $qdata->id;
+        $subq->questiontext = $pair->subquestion;
+        $subq->questiontextformat = FORMAT_HTML;
+        $subq->answertext = $pair->subanswer;
+        $DB->insert_record('qtype_match_subquestions', $subq);
+    }
+
+    $options = new stdClass();
+    $options->questionid = $qdata->id;
+    $options->shuffleanswers = 1;
+    $options->correctfeedback = '';
+    $options->correctfeedbackformat = FORMAT_HTML;
+    $options->partiallycorrectfeedback = '';
+    $options->partiallycorrectfeedbackformat = FORMAT_HTML;
+    $options->incorrectfeedback = '';
+    $options->incorrectfeedbackformat = FORMAT_HTML;
+    $options->shownumcorrect = 1;
+    $options->id = $DB->insert_record('qtype_match_options', $options);
+
+    $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);
+    $event = \core\event\question_created::create_from_question_instance($qdata, $context);
+    $event->trigger();
+
+    $transaction->allow_commit();
+}
 
 /**
  * Read Bedrock configuration (from plugin config or environment variables).
@@ -369,7 +570,6 @@ function qbank_genai_get_bedrock_config(): array {
         'inference_profile_arn' => $inferenceprofile,
     ];
 }
-
 
 /**
  * Extract text from a resource file. Basic support for text/html/md/csv and attempt for PDF.
@@ -413,7 +613,6 @@ function qbank_genai_extract_text_from_file($fileinfo, int $maxchars = 15000): s
 
     return $text;
 }
-
 
 /**
  * Try to extract the first JSON object from arbitrary text.
