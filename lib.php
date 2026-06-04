@@ -347,7 +347,8 @@ function qbank_genai_get_bedrock_config(): array {
     $region = get_config('qbank_genai', 'bedrock_region') ?: getenv('BEDROCK_REGION');
     $modelid = get_config('qbank_genai', 'bedrock_modelid') ?: getenv('BEDROCK_MODELID');
     $access = get_config('qbank_genai', 'bedrock_access_key') ?: getenv('AWS_ACCESS_KEY_ID');
-    $secret = get_config('qbank_genai', 'bedrock_secret') ?: getenv('AWS_SECRET_ACCESS_KEY');
+    $secret = get_config('qbank_genai', 'bedrock_secret_key') ?: getenv('AWS_SECRET_ACCESS_KEY');
+    $sessiontoken = getenv('AWS_SESSION_TOKEN');
     $endpoint = get_config('qbank_genai', 'bedrock_endpoint') ?: getenv('BEDROCK_ENDPOINT');
     $knowledgebase = get_config('qbank_genai', 'bedrock_knowledge_base_id') ?: getenv('BEDROCK_KNOWLEDGE_BASE_ID');
     $datasource = get_config('qbank_genai', 'bedrock_data_source_id') ?: getenv('BEDROCK_DATA_SOURCE_ID');
@@ -362,6 +363,7 @@ function qbank_genai_get_bedrock_config(): array {
         'modelid' => $modelid,
         'access_key' => $access,
         'secret_key' => $secret,
+        'session_token' => $sessiontoken,
         'endpoint' => $endpoint,
         'knowledge_base_id' => $knowledgebase,
         'data_source_id' => $datasource,

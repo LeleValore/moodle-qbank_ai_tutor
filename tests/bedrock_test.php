@@ -13,6 +13,7 @@ $region = getenv('BEDROCK_REGION') ?: ($argv[1] ?? 'us-east-1');
 $access = getenv('AWS_ACCESS_KEY_ID') ?: ($argv[2] ?? '');
 $secret = getenv('AWS_SECRET_ACCESS_KEY') ?: ($argv[3] ?? '');
 $modelid = getenv('BEDROCK_MODELID') ?: ($argv[4] ?? 'anthropic.claude-sonnet-4-6');
+$sessiontoken = getenv('AWS_SESSION_TOKEN') ?: ($argv[5] ?? '');
 $kbid = getenv('BEDROCK_KNOWLEDGE_BASE_ID') ?: 'CYFP7KN7PZ';
 $datasource = getenv('BEDROCK_DATA_SOURCE_ID') ?: 'PXDDUEQWQ4';
 $s3bucket = getenv('BEDROCK_S3_BUCKET') ?: 'moodle-quiz-bucket-925091289863-us-east-1-an';
@@ -41,12 +42,13 @@ if (file_exists($maybeconfig)) {
 
 if (empty($region) || empty($access) || empty($secret)) {
     echo "Usage: set env BEDROCK_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY\n";
-    echo "Or pass them as args: php tests/bedrock_test.php <region> <access> <secret> <modelid>\n";
+    echo "Optional for temporary credentials: AWS_SESSION_TOKEN\n";
+    echo "Or pass them as args: php tests/bedrock_test.php <region> <access> <secret> <modelid> [session_token]\n";
     echo "To auto-probe a set of modelIds, omit <modelid> or pass 'probe' as <modelid>.\n";
     exit(1);
 }
 
-$connector = new connector($region, $access, $secret, $kbid, $modelid, $datasource, $s3bucket, $inference_profile_arn);
+$connector = new connector($region, $access, $secret, $kbid, $modelid, $datasource, $s3bucket, $inference_profile_arn, $sessiontoken);
 
 echo "Testing Bedrock runtime (direct_generate)...\n";
 $prompt = "Health check: reply with the single word OK.";
