@@ -21,6 +21,7 @@ class connector {
     private string $region;
     private string $access_key;
     private string $secret_key;
+    private string $session_token;
     private string $knowledge_base_id;
     private string $chat_model_id;
     private string $data_source_id;
@@ -44,11 +45,13 @@ class connector {
         string $chat_model_id = '',
         string $data_source_id = '',
         string $s3_bucket = '',
-        string $inference_profile_arn = ''
+        string $inference_profile_arn = '',
+        string $session_token = ''
     ) {
         $this->region = $region;
         $this->access_key = $access_key;
         $this->secret_key = $secret_key;
+        $this->session_token = $session_token;
         $this->knowledge_base_id = $knowledge_base_id;
         $this->chat_model_id = $chat_model_id;
         $this->data_source_id = $data_source_id;
@@ -337,7 +340,8 @@ class connector {
         }
 
         try {
-            $credentials = new Credentials($this->access_key, $this->secret_key);
+            $token = $this->session_token !== '' ? $this->session_token : null;
+            $credentials = new Credentials($this->access_key, $this->secret_key, $token);
             $signer = new SignatureV4($service, $this->region);
             $signed = $signer->signRequest($request, $credentials);
             return $signed;
