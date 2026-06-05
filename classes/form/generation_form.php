@@ -56,5 +56,20 @@ class generation_form extends moodleform {
         $mform->addRule('numberessays', null, 'required', null, 'client');
         $mform->setType('numberessays', PARAM_INT);
         $mform->setDefault('numberessays', 1);
+
+        $mform->addElement('text', 'numbershortanswers', get_string('numbershortanswers', 'qbank_genai'), ['size' => '3']);
+        $mform->addRule('numbershortanswers', null, 'required', null, 'client');
+        $mform->setType('numbershortanswers', PARAM_INT);
+        $mform->setDefault('numbershortanswers', 0);
+
+        $mform->addElement('text', 'numbertruefalse', get_string('numbertruefalse', 'qbank_genai'), ['size' => '3']);
+        $mform->addRule('numbertruefalse', null, 'required', null, 'client');
+        $mform->setType('numbertruefalse', PARAM_INT);
+        $mform->setDefault('numbertruefalse', 0);
+
+        $mform->addElement('text', 'numbermatch', get_string('numbermatch', 'qbank_genai'), ['size' => '3']);
+        $mform->addRule('numbermatch', null, 'required', null, 'client');
+        $mform->setType('numbermatch', PARAM_INT);
+        $mform->setDefault('numbermatch', 0);
     }
 }

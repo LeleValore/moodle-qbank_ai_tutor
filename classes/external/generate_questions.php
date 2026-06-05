@@ -74,22 +74,22 @@ class generate_questions extends external_api {
      * @param int $numbermatch Number of matching questions to be generated
      * @return string The result
      */
-    public static function execute($contextid, $courseid, $fileid, $numbermcqs, $numberessays, $numbershortanswers, $numbertruefalse, $numbermatch) {
+    public static function execute($contextID, $courseID, $fileID, $numberMCQs, $numberEssays, $numberShortAnswers, $numberTrueFalse, $numberMatch) {
         $params = self::validate_parameters(
             self::execute_parameters(),
             [
-                'contextID' => $contextid, 
-                'courseID' => $courseid, 
-                'fileID' => $fileid,
-                'numberMCQs' => $numbermcqs, 
-                'numberEssays' => $numberessays,
-                'numberShortAnswers' => $numbershortanswers,
-                'numberTrueFalse' => $numbertruefalse,
-                'numberMatch' => $numbermatch
+                'contextID' => $contextID, 
+                'courseID' => $courseID, 
+                'fileID' => $fileID,
+                'numberMCQs' => $numberMCQs, 
+                'numberEssays' => $numberEssays,
+                'numberShortAnswers' => $numberShortAnswers,
+                'numberTrueFalse' => $numberTrueFalse,
+                'numberMatch' => $numberMatch
             ]
         );
 
-        $context = \context_course::instance($courseid);
+        $context = \context_course::instance($courseID);
         self::validate_context($context);
         require_all_capabilities(qbank_genai_required_capabilities(), $context, null, false);
 
@@ -100,7 +100,7 @@ class generate_questions extends external_api {
         }
 
         // Get file info and extract text.
-        $fileinfo = qbank_genai_get_fileinfo_for_resource($fileid);
+        $fileinfo = qbank_genai_get_fileinfo_for_resource($fileID);
         if (!$fileinfo) {
             throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
         }
@@ -132,11 +132,11 @@ class generate_questions extends external_api {
 
         // Build user prompt dynamically based on requested counts.
         $userprompt = 'Create ';
-        $userprompt .= $numbermcqs . ' multiple choice questions, ';
-        $userprompt .= $numberessays . ' essay questions, ';
-        $userprompt .= $numbershortanswers . ' short answer questions, ';
-        $userprompt .= $numbertruefalse . ' true/false questions, and ';
-        $userprompt .= $numbermatch . ' matching questions on the content of the provided file.';
+        $userprompt .= $numberMCQs . ' multiple choice questions, ';
+        $userprompt .= $numberEssays . ' essay questions, ';
+        $userprompt .= $numberShortAnswers . ' short answer questions, ';
+        $userprompt .= $numberTrueFalse . ' true/false questions, and ';
+        $userprompt .= $numberMatch . ' matching questions on the content of the provided file.';
 
         $connector = new \qbank_genai\bedrock\connector(
             $bedrockcfg['region'],
@@ -170,7 +170,8 @@ class generate_questions extends external_api {
 
         if ($totalquestions > 0) {
             // Create question bank category and questions.
-            $category = qbank_genai_create_question_category($contextid, get_coursemodule_from_id("resource", $fileid)->name);
+            $cm = get_fast_modinfo($courseID)->get_cm($fileID);
+            $category = qbank_genai_create_question_category($contextID, $cm->name);
 
             $i = 0;
 

@@ -23,6 +23,8 @@ use core_external\external_value;
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
+
 require_once($CFG->dirroot . '/question/bank/genai/lib.php');
 require_once($CFG->dirroot . '/question/bank/genai/vendor/autoload.php');
 
@@ -56,7 +58,7 @@ class tag_questions extends external_api {
 
     /**
      * Tag questions
-     * @param object $questionlist The list of question IDs to tag
+     * @param array $questionlist The list of question IDs to tag
      * @return string The result
      */
     public static function execute($questionlist) {
@@ -98,8 +100,19 @@ class tag_questions extends external_api {
 
             $questiontext = strip_tags($question->questiontext);
 
-            foreach ($question->answers as $a) {
-                $questiontext .= '\n- ' . strip_tags($a->answer);
+            // Estrazione dinamica del testo delle risposte in base al tipo di domanda
+            if (!empty($question->answers) && is_array($question->answers)) {
+                // Funziona per multichoice, shortanswer, truefalse, essay (se valorizzato)
+                foreach ($question->answers as $a) {
+                    $questiontext .= "\n- " . strip_tags($a->answer);
+                }
+            } else if (!empty($question->subquestiontexts) && is_array($question->subquestiontexts)) {
+                // Specifico per le domande di tipo 'match' (Corrispondenze)
+                foreach ($question->subquestiontexts as $key => $subqtext) {
+                    if (!empty($subqtext)) {
+                        $questiontext .= "\n- " . strip_tags($subqtext) . " -> " . strip_tags($question->subanswers[$key]);
+                    }
+                }
             }
 
             // Call Bedrock to get tags and parse JSON-only response.
@@ -113,7 +126,7 @@ class tag_questions extends external_api {
             }
             $tags = $parsed->tags;
 
-            \core_tag_tag::set_item_tags('core_question', 'question', $qid, \context::instance_by_id($question->contextid), $tags);
+            \core_tag_tag::set_item_tags('core_question', 'question', $qid, $context, $tags);
 
             $numbersuccessfullytagged++;
         }

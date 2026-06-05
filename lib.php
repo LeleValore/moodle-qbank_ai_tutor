@@ -141,7 +141,7 @@ function qbank_genai_create_question_category(int $contextid, string $resourcede
         'name'       => 'GenAI (' . date('d/m/Y H:i:s') . ')',
         'info'       => 'Generative AI-based questions on: ' . format_string($resourcedescription),
         'infoformat' => FORMAT_HTML,
-        'stamp'      => make_unique_id_code(),
+        'stamp'      => md5(microtime() . $contextid),
         'sortorder'  => 999,
         'idnumber'   => null,
         'contextid'  => $contextid,
@@ -186,7 +186,7 @@ function qbank_genai_create_mcq(string $name, stdClass $question, stdClass $cate
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-    $qdata->stamp = make_unique_id_code();
+    $qdata->stamp = md5(microtime() . $USER->id);
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
     $t = time();
@@ -268,7 +268,7 @@ function qbank_genai_create_essay(string $name, string $questiontext, float $max
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-    $qdata->stamp = make_unique_id_code();
+    $qdata->stamp = md5(microtime() . $USER->id);
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
     $t = time();
@@ -339,7 +339,7 @@ function qbank_genai_create_shortanswer(string $name, stdClass $question, stdCla
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-    $qdata->stamp = make_unique_id_code();
+    $qdata->stamp = md5(microtime() . $USER->id);
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
     $t = time();
@@ -409,7 +409,7 @@ function qbank_genai_create_truefalse(string $name, stdClass $question, stdClass
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-    $qdata->stamp = make_unique_id_code();
+    $qdata->stamp = md5(microtime() . $USER->id);
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
     $t = time();
@@ -488,7 +488,7 @@ function qbank_genai_create_match(string $name, stdClass $question, stdClass $ca
     $qdata->questiontextformat = FORMAT_HTML;
     $qdata->generalfeedback = '';
     $qdata->generalfeedbackformat = FORMAT_HTML;
-    $qdata->stamp = make_unique_id_code();
+    $qdata->stamp = md5(microtime() . $USER->id);
     $qdata->createdby = $USER->id;
     $qdata->modifiedby = $USER->id;
     $t = time();
@@ -594,8 +594,12 @@ function qbank_genai_extract_text_from_file($fileinfo, int $maxchars = 15000): s
         $text = file_get_contents($copypath);
     } else if ($ext === 'pdf') {
         // Try pdftotext if available.
-        $pdftotext = trim(shell_exec('which pdftotext'));
+        $cmd = (PHP_OS_FAMILY === 'Windows') ? 'where pdftotext' : 'which pdftotext';
+        $pdftotext = trim(shell_exec($cmd));
         if (!empty($pdftotext)) {
+            if (PHP_OS_FAMILY === 'Windows' && strpos($pdftotext, "\n") !== false) {
+                $pdftotext = explode("\n", $pdftotext)[0];
+            }
             $out = shell_exec(escapeshellcmd($pdftotext) . ' ' . escapeshellarg($copypath) . ' -');
             $text = $out ?: '';
         } else {
