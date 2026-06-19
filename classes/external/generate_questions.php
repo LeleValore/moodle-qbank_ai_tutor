@@ -44,6 +44,9 @@ class generate_questions extends external_api {
             'fileID' => new external_value(PARAM_INT, 'File ID'),
             'numberMCQs' => new external_value(PARAM_INT, 'Number of MCQs'),
             'numberEssays' => new external_value(PARAM_INT, 'Number of essays'),
+            'numberShortAnswers' => new external_value(PARAM_INT, 'Number of short answer questions'),
+            'numberTrueFalse' => new external_value(PARAM_INT, 'Number of true/false questions'),
+            'numberMatch' => new external_value(PARAM_INT, 'Number of matching questions'),
         ]);
     }
 
@@ -58,7 +61,7 @@ class generate_questions extends external_api {
     /**
      * Generate questions.
      *
-     * The selected file is uploaded to OpenAI, whereupon questions are generated based on its content.
+     * The selected file is uploaded to OpenAI/Bedrock, whereupon questions are generated based on its content.
      * Questions are then programmatically added to a newly created question bank category.
      *
      * @param int $contextid The ID of the context
@@ -66,16 +69,27 @@ class generate_questions extends external_api {
      * @param int $fileid The ID of the file
      * @param int $numbermcqs Number of multiple choice questions to be generated
      * @param int $numberessays Number of essay questions to be generated
+     * @param int $numbershortanswers Number of short answer questions to be generated
+     * @param int $numbertruefalse Number of true/false questions to be generated
+     * @param int $numbermatch Number of matching questions to be generated
      * @return string The result
      */
-    public static function execute($contextid, $courseid, $fileid, $numbermcqs, $numberessays) {
+    public static function execute($contextID, $courseID, $fileID, $numberMCQs, $numberEssays, $numberShortAnswers, $numberTrueFalse, $numberMatch) {
         $params = self::validate_parameters(
             self::execute_parameters(),
-            ['contextID' => $contextid, 'courseID' => $courseid, 'fileID' => $fileid,
-                'numberMCQs' => $numbermcqs, 'numberEssays' => $numberessays]
+            [
+                'contextID' => $contextID, 
+                'courseID' => $courseID, 
+                'fileID' => $fileID,
+                'numberMCQs' => $numberMCQs, 
+                'numberEssays' => $numberEssays,
+                'numberShortAnswers' => $numberShortAnswers,
+                'numberTrueFalse' => $numberTrueFalse,
+                'numberMatch' => $numberMatch
+            ]
         );
 
-        $context = \context_course::instance($courseid);
+        $context = \context_course::instance($courseID);
         self::validate_context($context);
         require_all_capabilities(qbank_genai_required_capabilities(), $context, null, false);
 
@@ -86,7 +100,7 @@ class generate_questions extends external_api {
         }
 
         // Get file info and extract text.
-        $fileinfo = qbank_genai_get_fileinfo_for_resource($fileid);
+        $fileinfo = qbank_genai_get_fileinfo_for_resource($fileID);
         if (!$fileinfo) {
             throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
         }
@@ -96,18 +110,33 @@ class generate_questions extends external_api {
             throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
         }
 
-        // Build prompts.
+        // Build system prompt with the new question types instructions.
         $systemprompt = "You are a quiz generator. You will be provided a file about which you should create ";
-        $systemprompt .= "an indicated number of multiple choice questions (MCQ) respectively essay questions, ";
-        $systemprompt .= "in the same language as its content. Each multiple choice question shall have between ";
-        $systemprompt .= "3 and 5 answers and only 1 correct answer. Make sure all distractors are plausible and ";
-        $systemprompt .= "that the correct answer is not much longer than any distractor. For essay questions, ";
-        $systemprompt .= "also indicate grading information (a rubric with grading criteria and points assigned ";
-        $systemprompt .= "to each criterion, each on a separate line) that can be used for automatic grading, ";
-        $systemprompt .= "as well as the maximum number of points.";
+        $systemprompt .= "an indicated number of questions for each requested type, in the same language as its content.\n\n";
+        
+        $systemprompt .= "Requirements per type:\n";
+        $systemprompt .= "- Multiple Choice (mcq): Between 3 and 5 answers, exactly 1 correct answer. Plausible distractors. Correct answer not much longer than distractors.\n";
+        $systemprompt .= "- Essay (essay): Include a grading rubric with criteria and points assigned to each criterion (each on a separate line) and the maxpoints.\n";
+        $systemprompt .= "- Short Answer (shortanswer): A question requiring a short text or word answer. Provide a list of accepted correct answers.\n";
+        $systemprompt .= "- True/False (truefalse): A statement that is either true or false.\n";
+        $systemprompt .= "- Matching (match): A set of sub-questions/stems and their corresponding matching answers.\n\n";
+        
+        $systemprompt .= "You must output valid JSON matching this structure:\n";
+        $systemprompt .= "{\n";
+        $systemprompt .= "  \"mcq\": [ {\"stem\": \"...\", \"answers\": [{\"text\": \"...\", \"correct\": true}]} ],\n";
+        $systemprompt .= "  \"essay\": [ {\"stem\": \"...\", \"maxpoints\": 10, \"graderinfo\": \"...\"} ],\n";
+        $systemprompt .= "  \"shortanswer\": [ {\"stem\": \"...\", \"accepted_answers\": [\"ans1\", \"ans2\"]} ],\n";
+        $systemprompt .= "  \"truefalse\": [ {\"stem\": \"...\", \"correct_answer\": true} ],\n";
+        $systemprompt .= "  \"match\": [ {\"stem\": \"...\", \"pairs\": [{\"subquestion\": \"...\", \"subanswer\": \"...\"}]} ]\n";
+        $systemprompt .= "}";
 
-        $userprompt = 'Create ' . $numbermcqs . ' multiple choice questions and ' . $numberessays;
-        $userprompt .= ' essay questions on the content of the provided file.';
+        // Build user prompt dynamically based on requested counts.
+        $userprompt = 'Create ';
+        $userprompt .= $numberMCQs . ' multiple choice questions, ';
+        $userprompt .= $numberEssays . ' essay questions, ';
+        $userprompt .= $numberShortAnswers . ' short answer questions, ';
+        $userprompt .= $numberTrueFalse . ' true/false questions, and ';
+        $userprompt .= $numberMatch . ' matching questions on the content of the provided file.';
 
         $connector = new \qbank_genai\bedrock\connector(
             $bedrockcfg['region'],
@@ -120,8 +149,13 @@ class generate_questions extends external_api {
             $bedrockcfg['s3_bucket'] ?? ''
 =======
             $bedrockcfg['s3_bucket'] ?? '',
+<<<<<<< HEAD
             $bedrockcfg['inference_profile_arn'] ?? ''
 >>>>>>> 0d2a43cabdd967796a1d7d1876051a71483f9f32
+=======
+            $bedrockcfg['inference_profile_arn'] ?? '',
+            $bedrockcfg['session_token'] ?? ''
+>>>>>>> a7baba994e53ede4734c184f8bc937229e98b3a4
         );
 
         $prompt = $systemprompt . "\n\n" . $filetext . "\n\n" . $userprompt;
@@ -134,14 +168,22 @@ class generate_questions extends external_api {
         }
 
         $multiplechoicequestions = $questiondata->mcq ?? [];
-        $essayquestions = $questiondata->essay ?? [];
+        $essayquestions          = $questiondata->essay ?? [];
+        $shortanswerquestions    = $questiondata->shortanswer ?? [];
+        $truefalsequestions      = $questiondata->truefalse ?? [];
+        $matchquestions          = $questiondata->match ?? [];
 
-        if (count($multiplechoicequestions) + count($essayquestions) > 0) {
+        $totalquestions = count($multiplechoicequestions) + count($essayquestions) + 
+                          count($shortanswerquestions) + count($truefalsequestions) + count($matchquestions);
+
+        if ($totalquestions > 0) {
             // Create question bank category and questions.
-            $category = qbank_genai_create_question_category($contextid, get_coursemodule_from_id("resource", $fileid)->name);
+            $cm = get_fast_modinfo($courseID)->get_cm($fileID);
+            $category = qbank_genai_create_question_category($contextID, $cm->name);
 
             $i = 0;
 
+            // 1. Multiple Choice Questions
             foreach ($multiplechoicequestions as $data) {
                 $question = new \stdClass();
                 $question->stem = $data->stem;
@@ -152,19 +194,62 @@ class generate_questions extends external_api {
                 }
 
                 $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
-
                 qbank_genai_create_mcq($questionname, $question, $category);
             }
 
+            // 2. Essay Questions
             foreach ($essayquestions as $data) {
                 $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
                 qbank_genai_create_essay($questionname, $data->stem, $data->maxpoints, nl2br($data->graderinfo), $category);
             }
 
+            // 3. Short Answer Questions (Risposta breve)
+            foreach ($shortanswerquestions as $data) {
+                $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
+                $question = new \stdClass();
+                $question->stem = $data->stem;
+                $question->answers = [];
+                
+                // Assegna il 100% del punteggio a tutte le varianti di risposte corrette fornite
+                foreach ($data->accepted_answers as $answertext) {
+                    $question->answers[] = (object) ["text" => $answertext, "weight" => 1.0];
+                }
+                
+                qbank_genai_create_shortanswer($questionname, $question, $category);
+            }
+
+            // 4. True/False Questions (Vero/Falso)
+            foreach ($truefalsequestions as $data) {
+                $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
+                $question = new \stdClass();
+                $question->stem = $data->stem;
+                // In Moodle tipicamente si passa un booleano o il testo corretto per stabilire la risposta esatta
+                $question->correctanswer = (bool)$data->correct_answer;
+                
+                qbank_genai_create_truefalse($questionname, $question, $category);
+            }
+
+            // 5. Matching Questions (Corrispondenze)
+            foreach ($matchquestions as $data) {
+                $questionname = str_pad(strval(++$i), 3, "0", STR_PAD_LEFT);
+                $question = new \stdClass();
+                $question->stem = $data->stem;
+                $question->pairs = [];
+                
+                foreach ($data->pairs as $pair) {
+                    $question->pairs[] = (object) [
+                        "subquestion" => $pair->subquestion,
+                        "subanswer"   => $pair->subanswer
+                    ];
+                }
+                
+                qbank_genai_create_match($questionname, $question, $category);
+            }
+
             return get_string(
                 'questiongenerationsuccess',
                 'qbank_genai',
-                ['number' => count($multiplechoicequestions) + count($essayquestions), 'category' => $category->name]
+                ['number' => $totalquestions, 'category' => $category->name]
             );
         } else {
             throw new \Exception(get_string('noquestionsgenerated', 'qbank_genai'));
