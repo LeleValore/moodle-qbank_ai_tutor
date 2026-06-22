@@ -32,11 +32,19 @@ $string['autotagsuccess'] = '{$a} questions have been tagged successfully.';
 
 $string['noopenaiapikey'] = 'You need to set an OpenAI API key.';
 $string['nobedrockconfig'] = 'Bedrock is not configured. Set Bedrock region and model ID in plugin settings or via environment variables.';
+
+$string['contextID'] = 'Context ID';
+$string['courseID'] = 'Course ID';
+$string['fileID'] = 'File ID';
+
 $string['noquestionselected'] = 'No question selected.';
 $string['noquestionsgenerated'] = 'Issue during question generation. No questions were generated.';
 $string['noresources'] = 'There are no resources in your course.';
-$string['numberessays'] = 'Number of essay questions';
-$string['numbermcqs'] = 'Number of multiple choice questions';
+$string['numberEssays'] = 'Number of essays';
+$string['numberMCQs'] = 'Number of MCQs';
+$string['numberShortAnswers'] = 'Number of short answer questions';
+$string['numberTrueFalse'] = 'Number of true/false questions';
+$string['numberMatch'] = 'Number of matching questions';
 
 $string['openaiapikey'] = 'OpenAI API key';
 $string['openaiapikey_help'] = 'To be created at <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a>.';
